@@ -1,46 +1,84 @@
 from collections import namedtuple
-from enum import IntEnum, Enum
-from .enumsB1500 import Polarity
+from .enums import *
 
-def minCovRange(start,stop=None):
+def minCover_V(start,stop=None):
+    # since after .format() the values for the limited ranging are the same for input,
+    # output and measurement ranges we use the measurement Enum for all
+    largest = None
     if stop is None:
-        return True
+        largest = abs(start)
     else:
-        return False
-class Formats(IntEnum):
-    ascii12_with_header_crl = 1 # compatible with 412B
-    ascii12_no_header_crl = 2 # compatible with 412B
-    binary4_crl = 3 # compatible with 412B
-    binary4 = 4 # compatible with 412B
-    ascii12_with_header_comma = 5 # compatible with 412B
-    ascii13_with_header_crl = 11
-    ascii13_no_header_crl_flex = 12
-    binary8_crl = 13
-    binary8 = 14
-    ascii13_with_header_comma = 15
-    ascii13_with_header_crl_flex = 21
-    ascii13_no_header_crl_flex2 = 22
-    ascii13_with_header_comma_flex = 25
+        largest=max(abs(start),abs(stop))
+    # TODO: might be nice to have binary tree here...just out of principle
+    if largest <=0.2:
+        return MeasureRanges_V.V0_2_limited
+    elif largest <=0.5:
+        return MeasureRanges_V.V0_5_limited
+    elif largest <=2:
+        return MeasureRanges_V.V2_limited
+    elif largest <=5:
+        return MeasureRanges_V.V5_limited
+    elif largest <=20:
+        return MeasureRanges_V.V20_limited
+    elif largest <=40:
+        return MeasureRanges_V.V40_limited
+    elif largest <=100:
+        return MeasureRanges_V.V100_limited
+    elif largest <=200:
+        return MeasureRanges_V.V200_limited
+    elif largest <=500:
+        return MeasureRanges_V.V500_limited
+    elif largest <=1500:
+        return MeasureRanges_V.V1500_limited
+    elif largest <=3000:
+        return MeasureRanges_V.V3000_limited
+    else:
+        return MeasureRanges_V.full_auto
 
-class OutputModes(IntEnum):
-    dataonly = 0
-    default = 0
-    with_primarysource = 1
-    with_synchronoussource = 2  # comaptible with MM2, MM5
-    # MM16, MM27, and MM28 1-10 select sweep source set by the WNX, MCPNX,
-    # or MCPWNX command
+def minCover_I(start,stop=None):
+    # since after .format() the values for the limited ranging are the same for input,
+    # output and measurement ranges we use the measurement Enum for all
+    largest = None
+    if stop is None:
+        largest = abs(start)
+    else:
+        largest=max(abs(start),abs(stop))
+    # TODO: might be nice to have binary tree here...just out of principle
+    if largest <=1e-12:
+        return MeasureRanges_I.pA1_limited
+    elif largest <=1e-11:
+        return MeasureRanges_I.pA10_limited
+    elif largest <=1e-10:
+        return MeasureRanges_I.pA100_limited
+    elif largest <=1e-9:
+        return MeasureRanges_I.nA1_limited
+    elif largest <=1e-8:
+        return MeasureRanges_I.nA10_limited
+    elif largest <=1e-7:
+        return MeasureRanges_I.nA100_limited
+    elif largest <=1e-6:
+        return MeasureRanges_I.uA1_limited
+    elif largest <=1e-5:
+        return MeasureRanges_I.uA10_limited
+    elif largest <=1e-4:
+        return MeasureRanges_I.uA100_limited
+    elif largest <=1e-3:
+        return MeasureRanges_I.mA1_limited
+    elif largest <=1e-2:
+        return MeasureRanges_I.mA10_limited
+    elif largest <=1e-1:
+        return MeasureRanges_I.mA100_limited
+    elif largest <=1:
+        return MeasureRanges_I.A1_limited
+    elif largest <=2:
+        return MeasureRanges_I.A2_limited
+    elif largest <=2e2:
+        return MeasureRanges_I.A20_limited
+    elif largest <=4e2:
+        return MeasureRanges_I.pA40_limited
+    else:
+        return MeasureRanges_I.full_auto
 
-class Filter(IntEnum):
-    enabled = 0
-    disabled = 1
-class ADCTypes(IntEnum):
-    highspeed = 0
-    highresolution = 1
-    highspeed_pulse =2
-
-class ADCMode(IntEnum):
-    auto = 0
-    manual = 1
 
 class TestSetup(namedtuple('__TestSetup',
                 ["channels",    # list of channel setups
@@ -55,9 +93,7 @@ class TestSetup(namedtuple('__TestSetup',
     def __new__(cls, channels, highspeed_adc_number=1, highspeed_adc_mode=ADCMode.auto,adc_modes=[], multi_setup=None, format=Formats.ascii12_with_header_crl,output_mode=OutputModes.dataonly,filter=Filter.disabled):
         # add default values
         return super(TestSetup, cls).__new__(cls, channels, highspeed_adc_number, highspeed_adc_mode, adc_modes, multi_setup, format,output_mode, filter)
-class SeriesResistance(IntEnum):
-    disabled = 0
-    enabled = 1
+
 class Channel(
               namedtuple(
                   '__Channel',
@@ -86,9 +122,6 @@ class Channel(
 
 
 
-class Inputs(Enum):
-    V = 0
-    I = 1
 
 class DCForce(
               namedtuple(
@@ -103,97 +136,21 @@ class DCForce(
     def __new__(cls, input, value, compliance,input_range=None, polarity=Polarity.like_input,
                    compliance_range=None):
         if input_range is None:
-                input_range = minCovRange(value)
+            if input==Inputs.I:
+                    input_range = minCover_I(value)
+            else:
+                    input_range = minCover_V(value)
         return super(DCForce, cls).__new__(cls,input,input_range, value, compliance, polarity,
                    compliance_range)
 
-class MeasureModes(IntEnum):
-    # MM
-    spot = 1  # related source setup: DV,DI
-    staircase_sweep = 2  # WI, WV, WT, WM, WSI, WSV
-    pulsed_spot = 3  # PI, PV, PT
-    pulsed_sweep = 4 # PWI, PWV, PT, WM, WSI, WSV
-    staircase_sweep_pulsed_bias = 5 # WI, WV, WM, WSI,WSV, PI, PV, PT
-    quasi_pulsed_spot = 9 # BDV, BDT, BDM
-    sampling = 10 # MCC, MSC, ML, MT, MI, MV
-    quasi_static_cv = 13 # QSV, QST, QSM
-    linear_search = 14 # LSV, LSI, LGV, LGI, LSM, LSTM, LSSV, LSSI, LSVM
-    binary_serach = 15 # BSV, BSI, BGV, BGI, BSM, BST, BSSV, BSSI, BSVM
-    multi_channel_sweep = 16 # WI, WV, WT, WM, WNX
-    spot_C = 17 # FC, ACV, DCV
-    CV_sweep_dc_bias = 18 # FC, ACV, WDCV, WMDCV, WTDCV
-    pulsed_spot_C = 19 # PDCV, PTDCV
-    pulsed_sweep_CV = 20 # PWDCV, PTDCV
-    sweep_Cf = 22 # WFC, ACV, DCV, WMFC, WTFC
-    sweep_CV_ac_level = 23 # FC, WACV, DCV, WMACV, WTACV
-    sampling_Ct = 26 # MSC, MDCV, MTDCV
-    multichannel_pulsed_spot = 27 # MCPT, MCPNT, MCPNX
-    multichannel_pulsed_sweep = 28 # MCPT, MCPNT, MCPNX, MCPWS, MCPWNX, WNX
 
-class MeasureSides(IntEnum):
-    # CMM
-    compliance_side = 0 # returns reverse of force
-    current_side = 1
-    voltage_side = 2
-    force_side = 3 # returns force
-    current_and_voltage = 4  # returns as "compliance_side" and "force_side"
-
-class MeasureRanges(IntEnum):
-    # RI
-    full_auto = 0
-    pulse_compliance = 0 # 0, 8-23 with pulse is compliace range, minimum range that covers compliance value
-    # limited ranges
-    pA1_auto = 8
-    pA10_auto = 9
-    pA100_auto = 10
-    nA1_auto = 11
-    nA10_auto = 12
-    nA100_auto = 13
-    uA1_auto = 14
-    uA10_auto = 15
-    uA100_auto = 16
-    mA1_auto = 17
-    mA10_auto = 18
-    mA100_auto = 19
-    A1_auto = 20
-    A2_auto = 21
-    A20_auto = 22
-    A40_auto = 23
-    # fixed ranges
-    pA1_fixed = -8
-    pA10_fixed = -9
-    pA100_fixed = -10
-    nA1_fixed = -11
-    nA10_fixed = -12
-    nA100_fixed = -13
-    uA1_fixed = -14
-    uA10_fixed = -15
-    uA100_fixed = -16
-    mA1_fixed = -17
-    mA10_fixed = -18
-    mA100_fixed = -19
-    A1_fixed = -20
-    A2_fixed = -21
-    A20_fixed = -22
-    A40_fixed = -23
-
+# TODO consolidate measurements (Highspeed spot etc) here
 class Measurement(namedtuple("__Measurement",["target","mode","side","range"])):
     def __new__(cls,target,mode,side,range ):
         return super(Measurement, cls).__new__(cls,target,mode,side,range)
 
 
 
-class SweepMode(IntEnum):
-    #  up => sweeps from start to stop
-    #  up_down => sweeps from start to stop to start
-    linear_up = 1
-    log_up = 2
-    linear_up_down = 3
-    log_up_down = 3
-
-class AutoAbort(IntEnum):
-    disabled = 1
-    enabled = 2
 
 class StaircaseSweep(
     namedtuple(
@@ -210,21 +167,24 @@ class StaircaseSweep(
          "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
          "delay",   # 0 - 65.5350 in s,  0.1 ms steps, wait before measuring starts
 ])):  #  WT
-    def __new__(cls, input, start, stop, step, compliance, input_range, sweepmode=SweepMode.linear_up_down, auto_abort=AutoAbort.enabled, power_comp=None, hold=0, delay=0):
+    def __new__(cls, input, start, stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down, auto_abort=AutoAbort.enabled, power_comp=None, hold=0, delay=0):
+        if input_range is None:
+            if input == Inputs.I:
+                input_range = minCover_I(start, stop)
+            elif input == Inputs.V:
+                input_range = minCover_V(start, stop)
         return super(StaircaseSweep, cls).__new__(cls,input, sweepmode, input_range, start, stop, step, compliance, power_comp, auto_abort, hold, delay)
 
 
 
-class PulsePeriod(IntEnum):
-    minimum = -1
-    conservative = 0
 
 class PulseSweep(
     namedtuple(
         "__PulseSweep",
-        ["input",
+        [
+         "input",
          "sweepmode",
-         "range", #
+         "input_range", #
          "base",
          "start",
          "stop",
@@ -232,34 +192,66 @@ class PulseSweep(
          "compliance",
          "power_comp",  # not set by default
          "auto_abort", # WM, leaving post parameter aside because abort should reset imo
-         "hold"     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
+         "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
          "width",   # # pulse in seconds , see PT doc for ranges
          "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolution
          ])):  #  WT
-    def __new__(cls,staircase_setup, pulse_setup, auto_abort, timing):
-        return super(PulseSweep, cls).__new__(cls,staircase_setup, pulse_setup, auto_abort, timing)
+    def __new__(cls,input,base,start,stop,step,compliance, hold, width, period=PulsePeriod.minimum,input_range=None, auto_abort=AutoAbort.enabled,sweepmode=SweepMode.linear_up_down):
+        if input_range is None:
+            if input == Inputs.I:
+                input_range = minCover_I(start, stop)
+            elif input == Inputs.V:
+                input_range = minCover_V(start, stop)
+
+        return super(PulseSweep, cls).__new__(cls,input,sweepmode,input_range,base,start,stop,step,compliance, auto_abort, hold, width, period)
 
 
 
-class Pulse(namedtuple("_PulseSpot", [
+class Pulse(namedtuple("_Pulse", [
          "input",  # V, I
          "input_range", # PV range
          "base",  # PV
          "pulse",  # PV
          "compliance",
-         "auto_abort", # WM, leaving post parameter aside because abort should reset imo
-         "hold"     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
+         "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
          "width",   # # pulse in seconds , see PT doc for ranges
          "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolutio
         ])):
-    def __new__(cls, input,base, pulse,width,hold, compliance, period=PulsePeriod.minimum,auto_abort=AutoAbort.enabled,):
-        return super(Pulse, cls).__new__(cls, pulse_setup, pulse_timing)
+    def __new__(cls, input,  base, pulse,width,hold, compliance,input_range=None, period=PulsePeriod.minimum,):
+        if input_range is None:
+            if input == Inputs.I:
+                input_range = minCover_I(base, pulse)
+            elif input == Inputs.V:
+                input_range = minCover_V(base, pulse)
 
+        return super(Pulse, cls).__new__(cls, input,input_range,base, pulse,compliance,width,hold,  period)
+
+class QuasiPulse(namedtuple("__QuasiPulse", [
+    "settling_detection_intervall", # BDM
+    "measure_target", # BDM
+    "input_range",  # BDV
+    "start",  #BDV
+    "stop", # BDV
+    "compliance",# BDV
+    "hold",     # BDT, 0 - 655.350 in s, 10 ms steps, wait before measuring starts
+    "delay",   # BDT, 0 - 65.5350 in s,  0.1 ms steps, wait before measuring starts
+])):  # BDM,BDT, BDV
+    def __new__(cls, settling_detection_interval,measure_target,start,stop,compliance,hold=0, delay=0,input_range=None):
+        if input_range is None:
+            input_range = minCover_V(start,stop)
+        return super(QuasiPulse, cls).__new__(cls, settling_detection_interval,measure_target,input_range,start,stop,compliance,hold, delay)
 # EVERYTHING BELOW THIS TEXT IS STUBS ONLY AND NOT READY TO USE
+class HighSpeedSpot(namedtuple("__HighSpeedSpot",[
+    "target",
+    "IMP",
+    "FC",
+    "vrange",
+    "irange",
+    "Rrange",
+    "highspeed_mode"
+                                                  ,])):
+    pass
 
-class QuasiPulse(namedtuple("__QuasiPulse", ["BDM","BDT","BDV"])):  # BDM,BDT, BDV
-    def __new__(cls, pulse_setup, pulse_timing):
-        return super(QuasiPulse, cls).__new__(cls, pulse_setup, pulse_timing)
 
 
 class Search(
@@ -315,8 +307,6 @@ class Sampling(namedtuple("__Sampling",[])):
     pass
 
 
-class HighSpeedSpot(namedtuple("__HighSpeedSpot",[])):
-    pass
 
 
 class Pulsed(namedtuple("__Pulse",[])):
