@@ -8,7 +8,7 @@ It is very much a work in progress and not stable at all. It is also missing a l
 
 # Design Goals
 
-When I write one off scripts, I like the code to be self documenting. The bulk of the work so far has been creating Enums and namedtuples to make sure there are no magic numbers or cryptic commands, at the expense of more typing. But that what ipython tabcompletion is for.
+When I write one off scripts, I like the code to be self documenting. The bulk of the work so far has been creating Enums and namedtuples to make sure there are no magic numbers or cryptic commands, at the expense of more typing. But that is what ipython tabcompletion is for.
 
 # Documentation and examples
 will come soonish
