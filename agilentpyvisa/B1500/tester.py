@@ -41,18 +41,18 @@ class B1500():
 
     def enable_timestamp(self, state):
         if state:
-            return self._device.query("TSC {}".format(1))
+            return self._device.write("TSC {}".format(1))
         else:
-            return self._device.query("TSC {}".format(0))
+            return self._device.write("TSC {}".format(0))
 
     def check_err(self):
         return self._device.query("ERR?")  # get errnumber, ermsg
 
     def zero_channel(self, channel_number):
-        return self._device.query("DZ {}".format(channel_number))
+        return self._device.write("DZ {}".format(channel_number))
 
     def restore_channel(self, channel_number):
-        return self._device.query("RZ {}".format(channel_number))
+        return self._device.write("RZ {}".format(channel_number))
 
     def DC_V_sweep(
         self,
@@ -124,16 +124,16 @@ class B1500():
         return ret
 
     def set_filter(self, filter):
-        return self._device.query("FL {}".format(filter))
+        return self._device.write("FL {}".format(filter))
 
     def setup_channel(self, channel):
         # connect channel
-        self._device.query("CN {}".format(channel.number))  # connect channel
-        self._device.query(
+        self._device.write("CN {}".format(channel.number))  # connect channel
+        self._device.write(
             "SSR {},{}".format(
                 channel.number,
                 channel.series_resistance))  # connects or disconnects 1MOhm series
-        self._device.query(
+        self._device.write(
             "AAD {},{}".format(
                 channel.number,
                 channel.channel_adc))  # sets channel adc type
@@ -223,24 +223,68 @@ class B1500():
         elif measurement.config.mode in [MeasureModes.linear_search, MeasureModes.binary_search]:
             self.setup_search(measurement.channel, measurement.config)
         else:
-            raise ValueError("Unkown Measuremode")
+            raise ValueError("Unknown Measuremode")
 
     def setup_search(self, channel, config):
-        "MM 15"
-        if config.mode == MeasureModes.binary_search:
-            "BSM 1,1"
-            "BSVM 1"
-            "BST "
-            "BGI "
-            "BSV "
-            "BSSV "
+        self.set_measure_mode(config.mode, channel)
+        self.set_search_abort(config.mode,config.auto_abort)
+        self.set_search_output(config.mode, config.data_output)
+        self.set_search_timing(config.mode, config.hold, config.delay)
+        self.set_search_monitor(config.mode, channel, config.search_mode, config.condition,
+                                config.measure_range, config.target_value)
+        self.set_search_source(config.mode, channel, config.input_range,
+                               config.start, config.stop, config.compliance)
+        self.set_search_synchronous_source(config.mode, channel, config.polarity,
+                                           config.offset, config.compliance )
+
+    def set_search_abort(self, mode, auto_abort):
+        if mode == MeasuringModes.binary_search:
+            self._device.write("BSM {}".format(auto_abort))
         else:
-            "LSM 1,1"
-            "LSVM 1"
-            "LST "
-            "LGI "
-            "LSV "
-            "LSSV "
+            self._device.write("LSM {}".format(auto_abort))
+
+    def set_search_output(self, mode, data_output):
+        if mode == MeasuringModes.binary_search:
+            self._device.write("BSVM {}".format(data_output))
+        else:
+            self._device.write("LSVM {}".format(data_output))
+
+    def set_search_timing(self, mode, hold, delay):
+        if mode == MeasuringModes.binary_search:
+            self._device.write("BST {}".format(hold, delay))
+        else:
+            self._device.write("LSTM {}".format(hold, delay))
+
+    def set_search_monitor(self, mode, channel, search_mode, condition, measure_range, target_value):
+        if mode == MeasuringModes.binary_search:
+            self._device.write("BGI {}".format(channel, search_mode, condition, measure_range, target_value))
+        else:
+            self._device.write("LGI {}".format(channel, search_mode, condition, measure_range, target_value))
+
+    def set_search_source(self, target, mode, channel, input_range, start, stop, compliance):
+        if target == Targets.V:
+            if mode == MeasuringModes.binary_search:
+                self._device.write("BSV {}".format(channel, input_range, start, stop, compliance))
+            else:
+                self._device.write("LSV {}".format(channel, input_range, start, stop, compliance))
+        else:
+            if mode == MeasuringModes.binary_search:
+                self._device.write("BSSI {}".format(channel, input_range, start, stop, compliance))
+            else:
+                self._device.write("LSSI {}".format(channel, input_range, start, stop, compliance))
+
+    def set_search_synchronous_source(self, target, mode, channel, polarity,offset, compliance):
+        if target == Targets.V:
+            if mode == MeasuringModes.binary_search:
+                self._device.write("BSSV {}".format(channel, polarity, offset, compliance))
+            else:
+                self._device.write("LSSV {}".format(channel, polarity, offset, compliance))
+        else:
+            if mode == MeasuringModes.binary_search:
+                self._device.write("BSSI {}".format(channel, polarity, offset, compliance))
+            else:
+                self._device.write("LSSI {}".format(channel, polarity, offset, compliance))
+
 
     def setup_quasi_static_cv(self, channel, config):
         self.set_measure_mode(config.mode, channel)
@@ -276,20 +320,20 @@ class B1500():
         self._device.write("ADJ? {},{}".format(channel, config.compensation_data))
 
     def set_measure_mode(self, mode, channel):
-        self._device.query(
+        self._device.write(
         "MM {}".format(",".join(["{}".format(x) for x in [mode, channel]])))
 
     def set_measure_side(self, channel, side):
-        self._device.query("CMM {},{}".format(channel, side))
+        self._device.write("CMM {},{}".format(channel, side))
 
     def set_measure_range(self, channel, target, range):
             if target == Inputs.V:
-                self._device.query(
+                self._device.write(
                     "RV {},{}".format(
                         channel,
                         range))  # sets channel adc type
             else:
-                self._device.query(
+                self._device.write(
                     "RI {},{}".format(
                         channel,
                         range))  # sets channel adc type
@@ -305,31 +349,31 @@ class B1500():
     def dc_force(self, channel_number, force_setup):
         force_query = ",".join(["{}".format(x) for x in force_setup[1:]])
         if force_setup.input == Inputs.V:
-            return self._device.query(
+            return self._device.write(
                 "DV {},{}".format(
                     channel_number,
                     force_query))
         if force_setup.input == Inputs.I:
-            return self._device.query(
+            return self._device.write(
                 "DI {},{}".format(
                     channel_number,
                     force_query))
 
     def staircase_sweep(self, channel_number, sweep_setup):
-        self._device.query(
+        self._device.write(
             "WT {},{}".format(
                 sweep_setup.hold,
                 sweep_setup.delay))
-        self._device.query("WM {}".format(sweep_setup.auto_abort))
+        self._device.write("WM {}".format(sweep_setup.auto_abort))
         if sweep_setup.input == Inputs.V:
-            return self._device.query("WV {}".format(
+            return self._device.write("WV {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -3]
                                                if isinstance(x, IntEnum)])))
         else:
-            return self._device.query("WI {}".format(
+            return self._device.write("WI {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
@@ -337,31 +381,31 @@ class B1500():
                                                if isinstance(x, IntEnum)])))
 
     def pulse_sweep(self, channel_number, sweep_setup):
-        self._device.query(
+        self._device.write(
             "PT {},{}".format(
                 sweep_setup.hold,
                 sweep_setup.width,
                 sweep_setup.period))
-        self._device.query("WM {}".format(sweep_setup.auto_abort))
+        self._device.write("WM {}".format(sweep_setup.auto_abort))
         if sweep_setup.input == Inputs.V:
-            return self._device.query("PWV {}".format(
+            return self._device.write("PWV {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -4] if x])))
         else:
-            return self._device.query("PWI {}".format(
+            return self._device.write("PWI {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -4] if x])))
 
     def quasi_pulse(self, channel_number, quasi_setup):
-        self._device.query("BDT {},{}".format(
+        self._device.write("BDT {},{}".format(
             *["{}".format(x) for x in quasi_setup[-2:]]))
-        self._device.query("BDM {},{}".format(
+        self._device.write("BDM {},{}".format(
             *["{}".format(x) for x in quasi_setup[0:2]]))
-        self._device.query("BDV {},{}".format(
+        self._device.write("BDV {},{}".format(
             channel_number, *["{}".format(x) for x in quasi_setup[2:6]]))
 
     def SPGU(channel_number):
