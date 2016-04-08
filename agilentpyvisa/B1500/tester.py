@@ -195,29 +195,112 @@ class B1500():
                         highspeed_setup.mode))
 
     def setup_measurement(self, measurement):
-        if measurement.mode in ONE_CHANNEL:
-            self._device.query(
-                "MM {}".format(",".join(["{}".format(x) for x in [measurement.mode, measurement.channel]])))
-        elif  measurement.mode in OPTIONAL_CHANNEL:
-                "MM {}".format(",".join(["{}".format(x) for x in [measurement.mode, measurement.channel] if x]))
-        elif measurement.mode in ONE_TO_TEN_CHANNELS:
-            self._device.query(
-                "MM {}".format(",".join(["{}".format(x) for x in [measurement.mode]+measurement.channel if x])))
-            for c in measurement.channel:
-                # connects or disconnects 1MOhm series
-                self._device.query("CMM {},{}".format(c, measurement.side))
-        elif measurement.mode in NO_CHANNEL:
-            self._device.query("MM {}".format(measurement.mode,))  # connect channel
-        if measurement.target == Inputs.V:
-            return self._device.query(
-                "RV {},{}".format(
-                    channel_number,
-                    measurement.range))  # sets channel adc type
+        if measurement.config.mode in [
+            MeasureModes.spot,
+            MeasureModes.staircase_sweep,
+            MeasureModes.sampling,
+            MeasureModes.multi_channel_sweep,
+            MeasureModes.CV_sweep_dc_bias,
+            MeasureModes.multichannel_pulsed_spot,
+            MeasureModes.multichannel_pulsed_sweep,
+            MeasureModes.pulsed_spot,
+            MeasureModes.pulsed_sweep,
+            MeasureModes.staircase_sweep_pulsed_bias,
+            MeasureModes.quasi_pulsed_spot,
+        ]:
+            self.measure_single_setup(measurement.channel, measurement.config,)
+        elif measurement.config.mode in [
+            MeasureModes.spot_C,
+            MeasureModes.pulsed_spot_C,
+            MeasureModes.pulsed_sweep_CV,
+            MeasureModes.sweep_Cf,
+            MeasureModes.sweep_CV,
+            MeasureModes.sampling_Ct,
+        ]:
+            self.setup_C_measure(measurement.channel, measurement.config, )
+        elif measurement.config.mode == MeasureModes.quasi_static_cv:
+            self.setup_quasi_static_cv(measurement.channel, measurement.config)
+        elif measurement.config.mode in [MeasureModes.linear_search, MeasureModes.binary_search]:
+            self.setup_search(measurement.channel, measurement.config)
         else:
-            return self._device.query(
-                "RI {},{}".format(
-                    channel_number,
-                    measurement.range))  # sets channel adc type
+            raise ValueError("Unkown Measuremode")
+
+    def setup_search(self, channel, config):
+        "MM 15"
+        if config.mode == MeasureModes.binary_search:
+            "BSM 1,1"
+            "BSVM 1"
+            "BST "
+            "BGI "
+            "BSV "
+            "BSSV "
+        else:
+            "LSM 1,1"
+            "LSVM 1"
+            "LST "
+            "LGI "
+            "LSV "
+            "LSSV "
+
+    def setup_quasi_static_cv(self, channel, config):
+        self.set_measure_mode(config.mode, channel)
+        self.set_quasi_static_compatibility()
+        self.set_quasi_static_leakage()
+        self.set_quasi_static_abort()
+        self.set_quasi_static_measure_range()
+        self.set_quasi_static_timings()
+        self.set_quasi_static_source()
+
+    def set_quasi_static_compatibility(self, compat):
+        self._device("QSC {}".format(compat))
+    def set_quasi_static_leakage(self, output, compensation):
+        self._device("QSL {}".format())
+    def set_quasi_static_abort(self, abort):
+        self._device("QSM {}".format(abort))
+    def set_quasi_static_measure_range(self, range):
+        self._device("QSR {}".format(range))
+    def set_quasi_static_timings(self, C_integration, L_integration, hold, delay,delay1=0,delay2=0):
+        self._device("QST {},{},{},{}".format())
+    def set_quasi_static_source(self, channel, mode, vrange, start, stop, capacitive_measure_voltage, step, compliance):
+        self._device("QSV {}".format())
+
+    def setup_C_measure(self, channel, config):
+        self.adjust_paste_compensation(channel, config.auto_compensation, config.compensation_data)
+        self.set_C_ADC_samples(self, config.adc_mode, config.ADC_coeff)
+
+    def set_C_ADC_samples(self, mode, coeff=None):
+        self._device.write("ACT {}".format(",".join(["{}".format(x) for x in [adc_mode, coeff] if x])))
+
+    def adjust_phase_compensation(self, channel, auto_compensation, compensation_data):
+        self._device.write("ADJ {},{}".format(channel, config.auto_compensation))
+        self._device.write("ADJ? {},{}".format(channel, config.compensation_data))
+
+    def set_measure_mode(self, mode, channel):
+        self._device.query(
+        "MM {}".format(",".join(["{}".format(x) for x in [mode, channel]])))
+
+    def set_measure_side(self, channel, side):
+        self._device.query("CMM {},{}".format(channel, side))
+
+    def set_measure_range(self, channel, target, range):
+            if target == Inputs.V:
+                self._device.query(
+                    "RV {},{}".format(
+                        channel,
+                        range))  # sets channel adc type
+            else:
+                self._device.query(
+                    "RI {},{}".format(
+                        channel,
+                        range))  # sets channel adc type
+
+
+    def measure_single_setup(self, channel, config):
+        self.set_measure_mode(config.mode, channel)
+        if mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+            self.set_measure_side(channel, config.side)
+        if mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+            self.set_measure_range(channel, config.target, config.range)
 
     def dc_force(self, channel_number, force_setup):
         force_query = ",".join(["{}".format(x) for x in force_setup[1:]])

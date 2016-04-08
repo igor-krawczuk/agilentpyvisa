@@ -98,37 +98,6 @@ class MeasureModes(IntEnum):
     multichannel_pulsed_spot = 27 # MCPT, MCPNT, MCPNX
     multichannel_pulsed_sweep = 28 # MCPT, MCPNT, MCPNX, MCPWS, MCPWNX, WNX
 
-ONE_CHANNEL =set([
-    MeasureModes.pulsed_spot,
-    MeasureModes.pulsed_sweep,
-    MeasureModes.staircase_sweep_pulsed_bias,
-    MeasureModes.spot_C,
-    MeasureModes.pulsed_spot_C,
-    MeasureModes.pulsed_sweep_CV,
-    MeasureModes.sweep_Cf,
-    MeasureModes.sweep_CV_ac_level,
-    MeasureModes.sampling_Ct,
-   ])
-
-OPTIONAL_CHANNEL =set([
-    MeasureModes.quasi_pulsed_spot,
-    MeasureModes.quasi_static_cv,
-])
-
-ONE_TO_TEN_CHANNELS = set([
-   MeasureModes.spot,
-   MeasureModes.staircase_sweep,
-   MeasureModes.sampling,
-   MeasureModes.multi_channel_sweep,
-   MeasureModes.CV_sweep_dc_bias,
-   MeasureModes.multichannel_pulsed_spot,
-   MeasureModes.multichannel_pulsed_sweep,
-])
-
-NO_CHANNEL =set([
-    MeasureModes.linear_search,
-    MeasureModes.binary_search,
-])
 
 class MeasureSides(IntEnum):
     # CMM

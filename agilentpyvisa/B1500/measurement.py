@@ -76,7 +76,7 @@ class SPGU(namedtuple("__SPGU",[])):
     pass
 
 
-class Sampling(namedtuple("__Sampling",[])):
+class Sampling(namedtuple("__Sampling",["range","base","bias","compliance","hold_bias","interval","number","hold_base"])):
     pass
 
 
