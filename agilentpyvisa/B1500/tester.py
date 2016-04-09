@@ -1,37 +1,33 @@
-# from itertools import zip_longest
+# vim: set fileencoding: utf-8 -*-
+# -*- coding: utf-8 -*-
+import visa
 from collections import OrderedDict
-from .tests import *
+from .force import *
+from .enums import *
+from .measurement import *
+from .setup import *
 
 
-class DummyTester():
-
-    def __init__(self):
-        pass
-
-    def query(*args, **kwargs):
-        print([x for x in args if isinstance(x, str)])
-        if kwargs:
-            print(kwargs)
-        return False
-
-    def write(*args, **kwargs):
-        print([x for x in args if isinstance(x, str)])
-        if kwargs:
-            print(kwargs)
 
 
 class B1500():
-
-    def __init__(self):
-        self._device = DummyTester()  # open pyvisa device
-        self.tests = OrderedDict()
+    def __init__(self, tester):
+        print("ok")
+    #    self.__rm = visa.ResourceManager()
+    #    self._device = self.__rm.open_resource(tester)
+    #    self.tests = OrderedDict()
 
     def init(self):
-        self.reset()
-        self.check_err()
+        print("ok")
+        #self.reset()
+        #self.check_err()
+
 
     def reset(self):
         return self._device.query("*RST?")
+
+    def check_err(self):
+        return self._device.query("ERR?")  # get errnumber, ermsg
 
     def operations_completed(self):
         return self._device.query("*OPC?")
@@ -45,8 +41,6 @@ class B1500():
         else:
             return self._device.write("TSC {}".format(0))
 
-    def check_err(self):
-        return self._device.query("ERR?")  # get errnumber, ermsg
 
     def zero_channel(self, channel_number):
         return self._device.write("DZ {}".format(channel_number))
@@ -96,10 +90,7 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(
-            channels=[in_channel, ground],
-            measurements=[measure_setup],
-                         )
+        test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
         return self.run_test(test)
 
     def run_test(self, test_tuple):
@@ -410,36 +401,27 @@ class B1500():
 
     def SPGU(channel_number):
         pass
-        """
-        session.WriteString("CN " & sp_ch(0) & "," & sp_ch(1) & vbLf) ’SPGU ch on
-        ’37
-        session.WriteString("SIM 0" & vbLf)
-        ’PG mode
-        session.WriteString("SPRM 2," & duration & vbLf)
-        ’Duration mode
-        session.WriteString("ODSW " & sp_ch(0) & ", 0" & vbLf) ’Disables pulse switch ’40
-        session.WriteString("ODSW " & sp_ch(1) & ", 0" & vbLf)
-        session.WriteString("SER " & sp_ch(0) & "," & loadz & vbLf)
-        ’Load impedance
-        session.WriteString("SER " & sp_ch(1) & "," & loadz & vbLf)
-        session.WriteString("SPPER " & period & vbLf)
-        ’Pulse period
-        session.WriteString("SPM " & sp_ch(0) & ",1" & vbLf)
-        ’2-level pulse setup
-        ’45
-        session.WriteString("SPT " & sp_ch(0) & ",1," & p1_del & "," & p1_wid & "," &
+    """
+        ("CN " & sp_ch(0) & "," & sp_ch(1) & vbLf)
+        (SIM 0" & vbLf)
+        ("SPRM 2," & duration & vbLf)
+        ("ODSW " & sp_ch(0) & ", 0" & vbLf)
+        ("ODSW " & sp_ch(1) & ", 0" & vbLf)
+        ("SER " & sp_ch(0) & "," & loadz & vbLf)
+        ("SER " & sp_ch(1) & "," & loadz & vbLf)
+        ("SPPER " & period & vbLf)
+        ("SPM " & sp_ch(0) & ",1" & vbLf)
+        ("SPT " & sp_ch(0) & ",1," & p1_del & "," & p1_wid & "," &
         p_lead & "," & p_trail & vbLf)
-        session.WriteString("SPV " & sp_ch(0) & ",1," & p1_base & "," & p1_peak & vbLf)
-        session.WriteString("SPM " & sp_ch(1) & ",3" & vbLf)
-        ’3-level pulse setup
-        ’48
-        session.WriteString("SPT " & sp_ch(1) & ",1," & p2_del1 & "," & p2_wid1 & "," &
+        ("SPV " & sp_ch(0) & ",1," & p1_base & "," & p1_peak & vbLf)
+        ("SPM " & sp_ch(1) & ",3" & vbLf)
+        ("SPT " & sp_ch(1) & ",1," & p2_del1 & "," & p2_wid1 & "," &
         p_lead & "," & p_trail & vbLf)
-        session.WriteString("SPT " & sp_ch(1) & ",2," & p2_del2 & "," & p2_wid2 & "," &
+        ("SPT " & sp_ch(1) & ",2," & p2_del2 & "," & p2_wid2 & "," &
         p_lead & "," & p_trail & vbLf)
-        session.WriteString("SPV " & sp_ch(1) & ",1," & p2_base1 & "," & p2_peak1 & vbLf)
-        session.WriteString("SPV " & sp_ch(1) & ",2," & p2_base2 & "," & p2_peak2 & vbLf)
-        session.WriteString("SPUPD" & sp_ch(0) & "," & sp_ch(1) & vbLf) ’Apply setup ’53
+        ("SPV " & sp_ch(1) & ",1," & p2_base1 & "," & p2_peak1 & vbLf)
+        ("SPV " & sp_ch(1) & ",2," & p2_base2 & "," & p2_peak2 & vbLf)
+        ("SPUPD" & sp_ch(0) & "," & sp_ch(1) & vbLf)
         """
 
     def teardown_channel(self, channel):

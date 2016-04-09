@@ -10,7 +10,8 @@ setup(
     url = "https://github.com/wojcech/agilentpyvisa",
     download_url = "https://github.com/wojcech/agilentpyvisa/archive/master.zip",
     keywords = ["VISA", "agilent", "tester"],
-    instal_requires = [
+    test_requirements = ['pytest'],
+    install_requires = [
     "pyvisa",
     ],
     classifiers = [

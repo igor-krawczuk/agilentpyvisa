@@ -169,6 +169,7 @@ class MeasureRanges_I(IntEnum):
     A2_fixed = -21
     A20_fixed = -22
     A40_fixed = -23
+
 class SweepMode(IntEnum):
     #  up => sweeps from start to stop
     #  up_down => sweeps from start to stop to start
@@ -180,6 +181,7 @@ class SweepMode(IntEnum):
 class AutoAbort(IntEnum):
     disabled = 1
     enabled = 2
+
 class PulsePeriod(IntEnum):
     minimum = -1
     conservative = 0
@@ -193,7 +195,7 @@ class SeriesResistance(IntEnum):
     disabled = 0
     enabled = 1
 
-class Formats(IntEnum):
+class Format(IntEnum):
     ascii12_with_header_crl = 1 # compatible with 412B
     ascii12_no_header_crl = 2 # compatible with 412B
     binary4_crl = 3 # compatible with 412B
@@ -208,7 +210,7 @@ class Formats(IntEnum):
     ascii13_no_header_crl_flex2 = 22
     ascii13_with_header_comma_flex = 25
 
-class OutputModes(IntEnum):
+class OutputMode(IntEnum):
     dataonly = 0
     default = 0
     with_primarysource = 1
@@ -219,6 +221,7 @@ class OutputModes(IntEnum):
 class Filter(IntEnum):
     enabled = 0
     disabled = 1
+
 class ADCTypes(IntEnum):
     highspeed = 0
     highresolution = 1

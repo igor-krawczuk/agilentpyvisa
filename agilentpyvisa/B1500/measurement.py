@@ -92,7 +92,7 @@ class Spot(namedtuple("__Spot",[])):
 class MultiChannel(
     namedtuple(
         "__MultiChannel", [
-            "mode,", ])):  # pulsed, sweep,
+            "mode", ])):  # pulsed, sweep,
     def __new__(cls, type):
         return super(MultiChannelSetup, cls).__new__(cls, type)
 
