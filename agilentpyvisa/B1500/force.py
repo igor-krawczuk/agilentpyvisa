@@ -35,21 +35,21 @@ class DCForce(
               namedtuple(
                   "__DCForce",
                   ["input", # "I" or "V" for voltage and current respectively
-                  "input_range",
-                 "value",
-                 "compliance",
-                 "polarity",
-                  "compliance_range"  # if not set, uses minimum range that will cover. If set, limited auto never goes below
+                   "input_range",
+                   "value",
+                   "compliance",
+                   "polarity",
+                   "compliance_range",  # if not set, uses minimum range that will cover. If set, limited auto never goes below
+                   "power_comp",
                 ])):
-    def __new__(cls, input, value, compliance,input_range=None, polarity=Polarity.like_input,
-                   compliance_range=None):
+    def __new__(cls, input, value, compliance,input_range=None, polarity=Polarity.like_input, compliance_range=None, power_comp=None):
         if input_range is None:
             if input==Inputs.I:
                     input_range = minCover_I(value)
             else:
                     input_range = minCover_V(value)
         return super(DCForce, cls).__new__(cls,input,input_range, value, compliance, polarity,
-                   compliance_range)
+                   compliance_range, power_comp)
 
 
 class StaircaseSweep(

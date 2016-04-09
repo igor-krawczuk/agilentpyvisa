@@ -50,7 +50,7 @@ class B1500():
 
     def DC_V_sweep(self, input_channel, ground_channel, start,
         stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
-        power_comp=None, measure_range=None):
+        power_comp=None, measure_range=MeasureRanges_I.full_auto):
         measure_setup = Measurement(channel=input_channel, config=MeasureStaircaseSweep(target=Targets.I,
             side=MeasureSides.current_side,range=measure_range))
         if input_range is None:
@@ -80,12 +80,45 @@ class B1500():
         test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
         return self.run_test(test)
 
-    def DC_I_spot(self,):
-        measure_setup = MeasureSpot()
-        assert False
+    def DC_I_spot(self, input_channel, ground_channel, input_value,
+            compliance, input_range=InputRanges_I.full_auto, power_comp=None,
+            measure_range=MeasureRanges_V.full_auto):
+        measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
+        measure_channel = Channel(number=input_channel,
+                          dcforce=DCForce(input=Inputs.I,
+                                           value=input_value,
+                                           compliance=compliance,
+                                           input_range=input_range,
+                                           power_comp=power_comp))
+        ground_setup = DCForce(
+            input=Inputs.V,
+            value=0,
+            compliance=compliance)
+        ground = Channel(
+            number=ground_channel,
+            dcforce=ground_setup)
+        test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
+        self.run_test(test)
 
-    def DC_V_spot(self,):
-        assert False
+    def DC_V_spot(self, input_channel, ground_channel, input_value,
+            compliance, input_range=InputRanges_V.full_auto, power_comp=None,
+            measure_range=MeasureRanges_I.full_auto):
+        measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
+        measure_channel = Channel(number=input_channel,
+                          dcforce=DCForce(input=Inputs.V,
+                                           value=input_value,
+                                           compliance=compliance,
+                                           input_range=input_range,
+                                           power_comp=power_comp))
+        ground_setup = DCForce(
+            input=Inputs.V,
+            value=0,
+            compliance=compliance)
+        ground = Channel(
+            number=ground_channel,
+            dcforce=ground_setup)
+        test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
+        self.run_test(test)
 
     def DC_I_sweep(
         self,
@@ -98,7 +131,7 @@ class B1500():
         input_range=None,
         sweepmode=SweepMode.linear_up_down,
         power_comp=None,
-     measure_range=None):
+     measure_range=MeasureRanges_I.full_auto):
         measure_setup = Measurement(
             channel=input_channel,
             config=MeasureStaircaseSweep(target=Targets.V,
@@ -142,7 +175,7 @@ class B1500():
         for channel in test_tuple.channels:
             self.setup_channel(channel)
         for measurement in test_tuple.measurements:
-            self.setup_channel(channel)
+            self.setup_measurement(measurement)
         try:
             # resets timestamp, executes and optionally waits for answer,
             # returns data with elapsed
@@ -370,13 +403,13 @@ class B1500():
 
     def measure_single_setup(self, channel, config):
         self.set_measure_mode(config.mode, channel)
-        if mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+        if config.mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
             self.set_measure_side(channel, config.side)
-        if mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+        if config.mode not in set([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
             self.set_measure_range(channel, config.target, config.range)
 
     def dc_force(self, channel_number, force_setup):
-        force_query = ",".join(["{}".format(x) for x in force_setup[1:]])
+        force_query = ",".join(["{}".format(x) for x in force_setup[1:] if x is not None])
         if force_setup.input == Inputs.V:
             return self._device.write(
                 "DV {},{}".format(

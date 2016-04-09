@@ -23,7 +23,6 @@ class DummyTester():
 
 @pytest.fixture(scope="function")
 def tester(monkeypatch):
-    print("inmkp")
     def mock(self,*args):
         self._device = DummyTester()
     monkeypatch.setattr(B1500, "__init__", mock)
@@ -41,10 +40,10 @@ def test_DC_I_sweep(tester):
     tester.DC_I_sweep(1,2,0,5,0.5,1)
 
 def test_DC_V_spot(tester):
-    tester.DC_V_spot()
+    tester.DC_V_spot(1,2,5,1)
 
 def test_DC_I_spot(tester):
-    tester.DC_I_spot()
+    tester.DC_I_spot(1,2,5,1)
 
 def test_DC_V_pulsed_spot(tester):
     tester.DC_V_pulsed_spot()

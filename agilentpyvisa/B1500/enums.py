@@ -219,8 +219,8 @@ class OutputMode(IntEnum):
     # or MCPWNX command
 
 class Filter(IntEnum):
-    enabled = 0
-    disabled = 1
+    disabled = 0
+    enabled = 1
 
 class ADCTypes(IntEnum):
     highspeed = 0
