@@ -1,3 +1,6 @@
+from .enums import MeasureRanges_I
+from .enums import MeasureRanges_V
+
 def minCover_V(start,stop=None):
     # since after .format() the values for the limited ranging are the same for input,
     # output and measurement ranges we use the measurement Enum for all

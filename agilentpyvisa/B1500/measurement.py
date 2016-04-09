@@ -1,10 +1,22 @@
 from collections import namedtuple
 from .enums import *
+from .enums import MeasureSides,MeasureRanges_I,MeasureRanges_V, MeasureModes
 
-class Measurement(namedtuple("__Measurement",["target","mode","side","range"])):
-    def __new__(cls,target,mode,side,range ):
-        return super(Measurement, cls).__new__(cls,target,mode,side,range)
+class Measurement(namedtuple("__Measurement",["channel","config",])):
+    def __new__(cls,channel, config):
+        return super(Measurement, cls).__new__(cls, channel, config)
 
+class MeasureStaircaseSweep(namedtuple("__StaircaseSweep",["target","range","side","mode"])):
+    def __new__(cls,target,range=MeasureRanges_I.full_auto,side=MeasureSides.compliance_side):
+        # full_auto the same in I and V (=0)
+        mode=MeasureModes.staircase_sweep
+        return super(MeasureStaircaseSweep, cls).__new__(cls,target,range,side,mode)
+
+class MeasureSpot(namedtuple("__Spot",["target","range","side","mode"])):
+    def __new__(cls, target,  range=MeasureRanges_I.full_auto, side=MeasureSides.compliance_side):
+        # full_auto the same in I and V (=0)
+        mode=MeasureModes.spot
+        return super(MeasureSpot, cls).__new__(cls, target, range, side, mode)
 
 
 
@@ -86,8 +98,6 @@ class Pulsed(namedtuple("__Pulse",[])):
     pass
 
 
-class Spot(namedtuple("__Spot",[])):
-    pass
 
 class MultiChannel(
     namedtuple(

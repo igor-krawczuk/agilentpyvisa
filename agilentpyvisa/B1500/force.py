@@ -1,5 +1,6 @@
 from collections import namedtuple
 from .enums import *
+from .helpers import (minCover_I, minCover_V)
 
 class Channel(
               namedtuple(

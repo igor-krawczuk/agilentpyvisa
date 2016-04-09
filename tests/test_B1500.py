@@ -35,10 +35,10 @@ def test_init(tester):
     tester.init()
 
 def test_DC_V_sweep(tester):
-    tester.DC_V_sweep()
+    tester.DC_V_sweep(1,2,0,5,0.5,1)
 
 def test_DC_I_sweep(tester):
-    tester.DC_I_sweep()
+    tester.DC_I_sweep(1,2,0,5,0.5,1)
 
 def test_DC_V_spot(tester):
     tester.DC_V_spot()
@@ -47,13 +47,13 @@ def test_DC_I_spot(tester):
     tester.DC_I_spot()
 
 def test_DC_V_pulsed_spot(tester):
-    tester.DC_V_sweep()
+    tester.DC_V_pulsed_spot()
 
 def test_DC_I_pulsed_spot(tester):
     tester.DC_I_pulsed_spot()
 
 def test_SPGU_V(tester):
-    pass
+    tester.SPGU_V()
 
 def test_SPGU_I(tester):
-    pass
+    tester.SPGU_V()

@@ -5,22 +5,22 @@ from collections import OrderedDict
 from .force import *
 from .enums import *
 from .measurement import *
+from .measurement import (Measurement, MeasureSpot, MeasureStaircaseSweep, )
 from .setup import *
+from .helpers import minCover_I, minCover_V
 
 
 
 
 class B1500():
     def __init__(self, tester):
-        print("ok")
-    #    self.__rm = visa.ResourceManager()
-    #    self._device = self.__rm.open_resource(tester)
-    #    self.tests = OrderedDict()
+        self.__rm = visa.ResourceManager()
+        self._device = self.__rm.open_resource(tester)
+        self.tests = OrderedDict()
 
     def init(self):
-        print("ok")
-        #self.reset()
-        #self.check_err()
+        self.reset()
+        self.check_err()
 
 
     def reset(self):
@@ -48,7 +48,46 @@ class B1500():
     def restore_channel(self, channel_number):
         return self._device.write("RZ {}".format(channel_number))
 
-    def DC_V_sweep(
+    def DC_V_sweep(self, input_channel, ground_channel, start,
+        stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
+        power_comp=None, measure_range=None):
+        measure_setup = Measurement(channel=input_channel, config=MeasureStaircaseSweep(target=Targets.I,
+            side=MeasureSides.current_side,range=measure_range))
+        if input_range is None:
+            input_range = minCover_V(start, stop)
+        if measure_range is None:
+            measure_range = minCover_I(compliance)
+        sweep_setup = StaircaseSweep(
+            input=Inputs.V,
+            start=start,
+            stop=stop,
+            step=step,
+            sweepmode=sweepmode,
+            compliance=compliance,
+            auto_abort=AutoAbort.enabled,
+            input_range=input_range,
+            power_comp=power_comp)
+        in_channel = Channel(
+            number=input_channel,
+            staircase_sweep=sweep_setup)
+        ground_setup = DCForce(
+            input=Inputs.V,
+            value=0,
+            compliance=compliance)
+        ground = Channel(
+            number=ground_channel,
+            dcforce=ground_setup)
+        test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
+        return self.run_test(test)
+
+    def DC_I_spot(self,):
+        measure_setup = MeasureSpot()
+        assert False
+
+    def DC_V_spot(self,):
+        assert False
+
+    def DC_I_sweep(
         self,
         input_channel,
         ground_channel,
@@ -62,16 +101,15 @@ class B1500():
      measure_range=None):
         measure_setup = Measurement(
             channel=input_channel,
-            target=Targets.I,
-            mode=MeasureModes.staircase_sweep,
+            config=MeasureStaircaseSweep(target=Targets.V,
             side=MeasureSides.current_side,
-            range=measure_range)
+            range=measure_range))
         if input_range is None:
-            input_range = minCover_V(start, stop)
+            input_range = minCover_I(start, stop)
         if measure_range is None:
-            measure_range = minCover_I(compliance)
+            measure_range = minCover_V(compliance)
         sweep_setup = StaircaseSweep(
-            input=Inputs.V,
+            input=Inputs.I,
             start=start,
             stop=stop,
             step=step,
