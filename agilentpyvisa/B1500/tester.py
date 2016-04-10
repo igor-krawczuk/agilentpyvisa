@@ -573,29 +573,33 @@ class B1500():
         # measurement data
         # propably implement as genrator, as that will allow the switch betweenstreaming
         # and batch query via OPC?
-        assert("Need to add SPGU, pluse, Quasipulse and similar 'instant start' like TTI"=="DONE")
-        ret = None
+        exc = None
         data = None
-        if isinstance(measurements, list):
-            ret = []
-            for measurement in measurements:
-                if measurement in ["list", "XE", "activated", "measurements"]:
-                    exc = self._device.query("XE")
-                    if force_wait:
-                        exc = self._device.write("*OPC?")
-                if autoread:
-                    data = self._device.query("NUB?")
-                    ret.append((exc, data))
-                else:
-                    ret.append((exc))
-            return ret
-        elif isinstance(measurement, MeasureSPGU):
+        # look at first measurement only, since we can only measure one type of
+        # XE, SPGU, ... at once
+        if isinstance(measurements[0],("ALL_XE_MEASUREMENTS")):
+            # triggered by XE=> NUB gets all the data
+            exc = self._device.query("XE")
+            if force_wait:
+                exc = self._device.write("*OPC?")
+            if autoread:
+                data = self._device.query("NUB?")
+        elif isinstance(measurements[0], MeasureSPGU):
             exc= self.start_SPGU()
             if autoread:
-                data = self._device.query("CORRSER? {},{},{},{},{}".format(channel, measurement.update_impedance, measurement.delay, measurement.interval, measurement.count))
-                return (exc,data)
-            else:
-                return (exc, None)
+                data = []
+                for measurement in measurements:
+                    # for SPGU, if we "read" it we need to read out individual
+                    # channels
+                    data.append(self._device.query("CORRSER? {},{},{},{},{}".format(measurements[0].channel,
+                                                                           measurements[0].update_impedance,
+                                                                           measurements[0].delay,
+                                                                           measurements[0].interval,
+                                                                           measurements[0].count))
+                                )
+        elif isinstance(measurements[0],   ):
+            pass
+        return (exc,data)
 
     def start_SPGU(self):
         self._device.write("SPR")
