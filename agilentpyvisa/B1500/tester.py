@@ -3,10 +3,18 @@
 import visa
 from collections import OrderedDict
 from .force import *
-from .force import (Channel, PulsedSpot,  StaircaseSweep)
+from .force import (Channel,
+                    DCForce,
+                    StaircaseSweep,
+                    PulsedSpot,
+                    SPGU)
 from .enums import *
 from .measurement import *
-from .measurement import (Measurement, MeasureSpot, MeasureStaircaseSweep, MeasurePulsedSpot )
+from .measurement import (Measurement,
+                          MeasureSpot,
+                          MeasureStaircaseSweep,
+                          MeasurePulsedSpot,
+                          MeasureSPGU)
 from .setup import *
 from .helpers import minCover_I, minCover_V
 
@@ -48,6 +56,9 @@ class B1500():
 
     def restore_channel(self, channel_number):
         return self._device.write("RZ {}".format(channel_number))
+
+    def SPGU_V(self):
+        assert(False)
 
     def DC_sweep_V(self, input_channel, ground_channel, start,
         stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
@@ -509,7 +520,21 @@ class B1500():
         self._device.write("BDV {},{}".format(
             channel_number, *["{}".format(x) for x in quasi_setup[2:6]]))
 
-    def SPGU(channel_number):
+    def SPGU(self, channel_number, spgu_setup):
+        self.set_SPGU_wavemode(spgu_setup.mode)
+        self.set_SPGU_outputmode(spgu_setup.outputmode, spgu_setup.condition)
+        self.set_SPGU_pulse_switch(channel, spgu_setup.switch_state, spgu_setup.switch_normal, spgu_setup.switch_delay, spgu_setup.switch_delay)   #ODSW
+        self.set_SPGU_loadimpedance(channel, spgu_setup.loadZ)  # SER
+        self.set_SPGU_pulse_period(spgu_setup.pulseperiod)  # SPPER
+        self.set_SPGU_pulse_levels(channel, spgu_setup.pulse_levels, spgu_setup.pulse_base, spgu_setup.pulse_peak, spgu_setup.pulse_src)  # SPM, SPV/SPI, check if pulse_src==source
+        self.set_SPGU_pulse_timing(channel, spgu_setup.source, spgu_setup.pulse_delay, spgu_setup.pulse_width, spgu_setup.pulse_leading, spgu_setup.pulse_trailing,)  # SPT
+        self.set_SPGU_apply(channel)  # SPUPD
+
+    def set_SPGU_outputmode(outputmode, condition):
+        self._device.write("SPRM {},{}".format(",".join(["{}".format(x) for x in [outputmode, condition] if x])))
+
+    def set_SPGU_wavemode(self, mode):
+        self._device.write("SIM {}".format(mode))
         pass
     """
         ("CN " & sp_ch(0) & "," & sp_ch(1) & vbLf)
@@ -543,21 +568,40 @@ class B1500():
     def set_format(self, format, output_mode):
         self._device.write("FMT {},{}".format(format, output_mode))
 
-    def execute(self, measurements, force_wait=False, autoread=True):
-        def inner():
+    def execute(self, measurements, force_wait=True, autoread=True):
+        # need to figure out a proper interface on how to kick of and read out
+        # measurement data
+        # propably implement as genrator, as that will allow the switch betweenstreaming
+        # and batch query via OPC?
+        assert("Need to add SPGU, pluse, Quasipulse and similar 'instant start' like TTI"=="DONE")
+        ret = None
+        data = None
+        if isinstance(measurements, list):
+            ret = []
             for measurement in measurements:
                 if measurement in ["list", "XE", "activated", "measurements"]:
                     exc = self._device.query("XE")
                     if force_wait:
                         exc = self._device.write("*OPC?")
-                    if autoread:
-                        data = self._device.query("NUB?")
-                        yield (exc, data)
-                    else:
-                        yield (exc, None)
-                elif isinstance(measurement, HighSpeedSpot):
-                    yield self.highspeed_spot(channel.number, measurement)
-        return list(inner())
+                if autoread:
+                    data = self._device.query("NUB?")
+                    ret.append((exc, data))
+                else:
+                    ret.append((exc))
+            return ret
+        elif isinstance(measurement, MeasureSPGU):
+            exc= self.start_SPGU()
+            if autoread:
+                data = self._device.query("CORRSER? {},{},{},{},{}".format(channel, measurement.update_impedance, measurement.delay, measurement.interval, measurement.count))
+                return (exc,data)
+            else:
+                return (exc, None)
+
+    def start_SPGU(self):
+        self._device.write("SPR")
+        busy = 1
+        while busy:
+            busy = self._device.query("SPST?")
 
     def set_adc_global(
         self,

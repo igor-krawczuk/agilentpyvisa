@@ -24,6 +24,10 @@ class MeasurePulsedSpot(namedtuple("__MeasurePulsedSpot",["target","range","side
         mode=MeasureModes.pulsed_spot
         return super(MeasurePulsedSpot, cls).__new__(cls, target, range, side, mode)
 
+class MeasureSPGU(namedtuple("__MeasureSPGU",[])):
+    def __new__(cls, type):
+        return super(SPGU, cls).__new__(cls, )
+    pass
 
 # EVERYTHING BELOW THIS TEXT IS STUBS ONLY AND NOT READY TO USE
 class HighSpeedSpot(namedtuple("__HighSpeedSpot",[
@@ -87,10 +91,6 @@ class QuasiStatic(namedtuple("__QuasiStatic", ["type", ])):  # pulsed, sweep,
         return super(QuasiStatic, cls).__new__(cls, type)
 
 
-class SPGU(namedtuple("__SPGU",[])):
-    def __new__(cls, type):
-        return super(SPGU, cls).__new__(cls, )
-    pass
 
 
 class Sampling(namedtuple("__Sampling",["range","base","bias","compliance","hold_bias","interval","number","hold_base"])):

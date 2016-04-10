@@ -70,9 +70,12 @@ class StaircaseSweep(
                 input_range = minCover_V(start, stop)
         return super(StaircaseSweep, cls).__new__(cls,input, sweepmode, input_range, start, stop, step, compliance, power_comp, auto_abort, hold, delay)
 
+class SPGU(namedtuple("__SPGU",[])):
+    def __new__(cls):
+        return super(SPGU, cls).__new__(cls)
 
 # Everything below still needs review
-class PulsedSpot(namedtuple("_PulsedSpot", [
+class PulsedSpot(namedtuple("__PulsedSpot", [
          "input",  # V, I
          "input_range", # PV range
          "base",  # PV
@@ -91,6 +94,7 @@ class PulsedSpot(namedtuple("_PulsedSpot", [
 
         return super(PulsedSpot, cls).__new__(cls, input,input_range,base, pulse,compliance,hold, width,  period)
 
+### BELOW BE STUBS
 
 class PulseSweep(
     namedtuple(
@@ -123,5 +127,4 @@ class PulseSweep(
 
 
 
-### BELOW BE STUBS
 
