@@ -3,9 +3,10 @@
 import visa
 from collections import OrderedDict
 from .force import *
+from .force import (Channel, PulsedSpot,  StaircaseSweep)
 from .enums import *
 from .measurement import *
-from .measurement import (Measurement, MeasureSpot, MeasureStaircaseSweep, )
+from .measurement import (Measurement, MeasureSpot, MeasureStaircaseSweep, MeasurePulsedSpot )
 from .setup import *
 from .helpers import minCover_I, minCover_V
 
@@ -48,7 +49,7 @@ class B1500():
     def restore_channel(self, channel_number):
         return self._device.write("RZ {}".format(channel_number))
 
-    def DC_V_sweep(self, input_channel, ground_channel, start,
+    def DC_sweep_V(self, input_channel, ground_channel, start,
         stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
         power_comp=None, measure_range=MeasureRanges_I.full_auto):
         measure_setup = Measurement(channel=input_channel, config=MeasureStaircaseSweep(target=Targets.I,
@@ -80,7 +81,45 @@ class B1500():
         test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
         return self.run_test(test)
 
-    def DC_I_spot(self, input_channel, ground_channel, input_value,
+    def pulsed_spot_V(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_I.full_auto, hold=0 ):
+        measure_setup = Measurement(channel=input_channel, config=MeasurePulsedSpot(target=Targets.I, side=MeasureSides.current_side,range=measure_range))
+        measure_channel = Channel(number=input_channel,pulsed_spot=PulsedSpot(input=Inputs.V,base=base,pulse=pulse,width=width, compliance=compliance,hold=hold) )
+        ground_setup = DCForce(
+            input=Inputs.V,
+            value=0,
+            compliance=compliance)
+        ground = Channel(
+            number=ground_channel,
+            dcforce=ground_setup)
+        test = TestSetup(channels=[measure_channel, ground],measurements=[measure_setup],)
+        return self.run_test(test)
+
+    def pulsed_spot_I(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
+        measure_setup = Measurement(channel=input_channel,
+                                    config=MeasurePulsedSpot(target=Targets.V,
+                                                             side=MeasureSides.voltage_side,
+                                                             range=measure_range)
+                                    )
+        measure_channel = Channel(number=input_channel,
+                                  pulsed_spot=PulsedSpot(input=Inputs.I,
+                                                         base=base,
+                                                         pulse=pulse,
+                                                         width=width,
+                                                         compliance=compliance,
+                                                         hold=hold)
+                                  )
+        ground_setup = DCForce(
+            input=Inputs.I,
+            value=0,
+            compliance=compliance)
+        ground = Channel(
+            number=ground_channel,
+            dcforce=ground_setup)
+        test = TestSetup(channels=[measure_channel, ground],
+                         measurements=[measure_setup],)
+        return self.run_test(test)
+
+    def DC_spot_I(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_I.full_auto, power_comp=None,
             measure_range=MeasureRanges_V.full_auto):
         measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
@@ -100,7 +139,7 @@ class B1500():
         test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
         self.run_test(test)
 
-    def DC_V_spot(self, input_channel, ground_channel, input_value,
+    def DC_spot_V(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_V.full_auto, power_comp=None,
             measure_range=MeasureRanges_I.full_auto):
         measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
@@ -120,7 +159,7 @@ class B1500():
         test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
         self.run_test(test)
 
-    def DC_I_sweep(
+    def DC_sweep_I(
         self,
         input_channel,
         ground_channel,
@@ -206,8 +245,8 @@ class B1500():
             return self.staircase_sweep(channel.number, channel.staircase_sweep)
         elif channel.pulse_sweep is not None:
             return self.pulse_sweep(channel.number, channel.pulse_sweep)
-        elif channel.pulse is not None:
-            return self.pulse(channel.number, channel.pulse)
+        elif channel.pulsed_spot is not None:
+            return self.pulsed_spot(channel.number, channel.pulsed_spot)
         elif channel.quasipulse is not None:
             return self.quasi_pulse(channel.number, channel.quasipulse)
         elif channel.highspeed_spot is not None:
@@ -444,7 +483,7 @@ class B1500():
 
     def pulse_sweep(self, channel_number, sweep_setup):
         self._device.write(
-            "PT {},{}".format(
+            "PT {},{}, {}".format(
                 sweep_setup.hold,
                 sweep_setup.width,
                 sweep_setup.period))
@@ -538,12 +577,12 @@ class B1500():
                     highspeed_adc_number,
                     highspeed_adc_mode))
 
-    def pulse(self, channel_number, pulse_setup):
+    def pulsed_spot(self, channel_number, pulse_setup):
         self._device.write(
-            "PT {}, {}, {}, {}".format(*pulse_setup[-3:]))
+            "PT {}, {}, {}".format(pulse_setup.hold , pulse_setup.width, pulse_setup.period))
         if pulse_setup.input == Inputs.V:
             self._device.write(
-                "PV {},{},{},{},{}".format(channel_number, pulse_setup[1:-3]))
+                "PV {},{},{},{},{}".format(channel_number, pulse_setup.input_range, pulse_setup.base, pulse_setup.pulse,pulse_setup.compliance))
         else:
             self._device.write(
-                "PI {},{},{},{},{}".format(channel_number, pulse_setup[1:-3]))
+                "PI {},{},{},{},{}".format(channel_number, pulse_setup.input_range, pulse_setup.base, pulse_setup.pulse,pulse_setup.compliance))

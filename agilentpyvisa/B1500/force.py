@@ -6,30 +6,25 @@ class Channel(
               namedtuple(
                   '__Channel',
                   ["number",    # channel number
-                    "measurement",  # measurement setup, if we measure from this channel
                      "series_resistance",  # connect series yes or no? default no
                      "channel_adc",  # AAD, default ADCTypes.highspeed
                    "dcforce",
-                     "staircase_sweep",
+                    "staircase_sweep",
                    "pulse_sweep",
-                     "spot",
-                     "pulse",
-                      "quasipulse",
+                    "pulsed_spot",
+                    "quasipulse",
                    "SPGU",
                    "highspeed_spot", ])):
-    def __new__(cls,number, measurement=None, series_resistance=SeriesResistance.disabled, channel_adc=ADCTypes.highspeed,
-                   dcforce=None, staircase_sweep=None, pulse_sweep=None, spot=None, pulse=None, SPGU=None, quasipulse=None,
+    def __new__(cls,number,  series_resistance=SeriesResistance.disabled, channel_adc=ADCTypes.highspeed,
+                   dcforce=None, staircase_sweep=None, pulse_sweep=None, pulsed_spot=None, SPGU=None, quasipulse=None,
                    highspeed_spot=None ):
         # add default values
         # adc_type = AAD
         #
-        if [x is not None for x in [dcforce, staircase_sweep, pulse_sweep, spot, quasipulse, pulse, SPGU, highspeed_spot]].count(True)>1:
+        if [x is not None for x in [dcforce, staircase_sweep, pulse_sweep,  quasipulse, pulsed_spot, SPGU, highspeed_spot]].count(True)>1:
             raise "At most one force setup can be use per channel"
-        return super(Channel, cls).__new__(cls, number, measurement, series_resistance, channel_adc,
-                   dcforce, staircase_sweep, pulse_sweep, spot, pulse, quasipulse, SPGU, highspeed_spot )
-
-
-
+        return super(Channel, cls).__new__(cls, number, series_resistance, channel_adc,
+                   dcforce, staircase_sweep, pulse_sweep,  pulsed_spot, quasipulse, SPGU, highspeed_spot )
 
 class DCForce(
               namedtuple(
@@ -76,6 +71,25 @@ class StaircaseSweep(
         return super(StaircaseSweep, cls).__new__(cls,input, sweepmode, input_range, start, stop, step, compliance, power_comp, auto_abort, hold, delay)
 
 
+# Everything below still needs review
+class PulsedSpot(namedtuple("_PulsedSpot", [
+         "input",  # V, I
+         "input_range", # PV range
+         "base",  # PV
+         "pulse",  # PV
+         "compliance",
+         "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
+         "width",   # # pulse in seconds , see PT doc for ranges
+         "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolutio
+        ])):
+    def __new__(cls, input,  base, pulse,width,hold, compliance,input_range=None, period=PulsePeriod.minimum,):
+        if input_range is None:
+            if input == Inputs.I:
+                input_range = minCover_I(base, pulse)
+            elif input == Inputs.V:
+                input_range = minCover_V(base, pulse)
+
+        return super(PulsedSpot, cls).__new__(cls, input,input_range,base, pulse,compliance,hold, width,  period)
 
 
 class PulseSweep(
@@ -106,25 +120,6 @@ class PulseSweep(
         return super(PulseSweep, cls).__new__(cls,input,sweepmode,input_range,base,start,stop,step,compliance, auto_abort, hold, width, period)
 
 
-
-class Pulse(namedtuple("_Pulse", [
-         "input",  # V, I
-         "input_range", # PV range
-         "base",  # PV
-         "pulse",  # PV
-         "compliance",
-         "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
-         "width",   # # pulse in seconds , see PT doc for ranges
-         "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolutio
-        ])):
-    def __new__(cls, input,  base, pulse,width,hold, compliance,input_range=None, period=PulsePeriod.minimum,):
-        if input_range is None:
-            if input == Inputs.I:
-                input_range = minCover_I(base, pulse)
-            elif input == Inputs.V:
-                input_range = minCover_V(base, pulse)
-
-        return super(Pulse, cls).__new__(cls, input,input_range,base, pulse,compliance,width,hold,  period)
 
 
 

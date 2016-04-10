@@ -6,18 +6,23 @@ class Measurement(namedtuple("__Measurement",["channel","config",])):
     def __new__(cls,channel, config):
         return super(Measurement, cls).__new__(cls, channel, config)
 
-class MeasureStaircaseSweep(namedtuple("__StaircaseSweep",["target","range","side","mode"])):
+class MeasureStaircaseSweep(namedtuple("__MeasureStaircaseSweep",["target","range","side","mode"])):
     def __new__(cls,target,range=MeasureRanges_I.full_auto,side=MeasureSides.compliance_side):
         # full_auto the same in I and V (=0)
         mode=MeasureModes.staircase_sweep
         return super(MeasureStaircaseSweep, cls).__new__(cls,target,range,side,mode)
 
-class MeasureSpot(namedtuple("__Spot",["target","range","side","mode"])):
+class MeasureSpot(namedtuple("__MeasureSpot",["target","range","side","mode"])):
     def __new__(cls, target,  range=MeasureRanges_I.full_auto, side=MeasureSides.compliance_side):
         # full_auto the same in I and V (=0)
         mode=MeasureModes.spot
         return super(MeasureSpot, cls).__new__(cls, target, range, side, mode)
 
+class MeasurePulsedSpot(namedtuple("__MeasurePulsedSpot",["target","range","side","mode"])):
+    def __new__(cls, target,  range=MeasureRanges_I.full_auto, side=MeasureSides.compliance_side):
+        # full_auto the same in I and V (=0)
+        mode=MeasureModes.pulsed_spot
+        return super(MeasurePulsedSpot, cls).__new__(cls, target, range, side, mode)
 
 
 # EVERYTHING BELOW THIS TEXT IS STUBS ONLY AND NOT READY TO USE
@@ -94,8 +99,6 @@ class Sampling(namedtuple("__Sampling",["range","base","bias","compliance","hold
 
 
 
-class Pulsed(namedtuple("__Pulse",[])):
-    pass
 
 
 

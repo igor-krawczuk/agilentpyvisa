@@ -31,25 +31,42 @@ def tester(monkeypatch):
 
 
 def test_init(tester):
+    print("DC_sweep_I")
     tester.init()
 
-def test_DC_V_sweep(tester):
-    tester.DC_V_sweep(1,2,0,5,0.5,1)
+def test_DC_sweep_V(tester):
+    print("DC_sweep_V")
+    tester.DC_sweep_V(1,2,0,5,0.5,1)
 
-def test_DC_I_sweep(tester):
-    tester.DC_I_sweep(1,2,0,5,0.5,1)
+def test_DC_sweep_I(tester):
+    print("DC_spot_I")
+    tester.DC_sweep_I(1,2,0,5,0.5,1)
 
-def test_DC_V_spot(tester):
-    tester.DC_V_spot(1,2,5,1)
+def test_DC_spot_V(tester):
+    print("DC_spot_V")
+    tester.DC_spot_V(1,2,5,1)
 
-def test_DC_I_spot(tester):
-    tester.DC_I_spot(1,2,5,1)
+def test_DC_spot_I(tester):
+    print("DC_spot_I")
+    tester.DC_spot_I(1,2,5,1)
 
-def test_DC_V_pulsed_spot(tester):
-    tester.DC_V_pulsed_spot()
+def test_pulsed_spot_V(tester):
+    print("PulsedSpotV")
+    tester.pulsed_spot_V(input_channel=1,
+                         ground_channel=2,
+                         base=1,
+                         pulse=2,
+                         width=1e-3,
+                         compliance=1)
 
-def test_DC_I_pulsed_spot(tester):
-    tester.DC_I_pulsed_spot()
+def test_pulsed_spot_I(tester):
+    print("PulsedSpotV")
+    tester.pulsed_spot_I(input_channel=1,
+                         ground_channel=2,
+                         base=1,
+                         pulse=2,
+                         width=1e-3,
+                         compliance=1)
 
 def test_SPGU_V(tester):
     tester.SPGU_V()
