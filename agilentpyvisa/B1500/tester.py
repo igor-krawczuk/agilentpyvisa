@@ -3,14 +3,14 @@
 import visa
 from collections import OrderedDict
 from .force import *
-from .force import (Channel,
+from .force import (
                     DCForce,
                     StaircaseSweep,
                     PulsedSpot,
                     SPGU)
 from .enums import *
 from .measurement import *
-from .measurement import (Measurement,
+from .measurement import (
                           MeasureSpot,
                           MeasureStaircaseSweep,
                           MeasurePulsedSpot,
@@ -57,14 +57,16 @@ class B1500():
     def restore_channel(self, channel_number):
         return self._device.write("RZ {}".format(channel_number))
 
-    def SPGU_V(self):
-        assert(False)
+    def SPGU_V(self, input_channel, pulse_base, pulse_peak, pulse_width):
+        pulse_channel=Channel(number=input_channel, spgu=SPGU(pulse_base, pulse_peak,pulse_width))
+        test = TestSetup(channels=[pulse_channel])
+        self.run_test(test)
 
     def DC_sweep_V(self, input_channel, ground_channel, start,
         stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
         power_comp=None, measure_range=MeasureRanges_I.full_auto):
-        measure_setup = Measurement(channel=input_channel, config=MeasureStaircaseSweep(target=Targets.I,
-            side=MeasureSides.current_side,range=measure_range))
+        measure_setup = MeasureStaircaseSweep(target=Targets.I,
+            side=MeasureSides.current_side,range=measure_range)
         if input_range is None:
             input_range = minCover_V(start, stop)
         if measure_range is None:
@@ -81,7 +83,8 @@ class B1500():
             power_comp=power_comp)
         in_channel = Channel(
             number=input_channel,
-            staircase_sweep=sweep_setup)
+            staircase_sweep=sweep_setup,
+            measurement=measure_setup)
         ground_setup = DCForce(
             input=Inputs.V,
             value=0,
@@ -89,12 +92,13 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
+        test = TestSetup(channels=[in_channel, ground],)
         return self.run_test(test)
 
     def pulsed_spot_V(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_I.full_auto, hold=0 ):
-        measure_setup = Measurement(channel=input_channel, config=MeasurePulsedSpot(target=Targets.I, side=MeasureSides.current_side,range=measure_range))
-        measure_channel = Channel(number=input_channel,pulsed_spot=PulsedSpot(input=Inputs.V,base=base,pulse=pulse,width=width, compliance=compliance,hold=hold) )
+        measure_setup = MeasurePulsedSpot(target=Targets.I, side=MeasureSides.current_side,range=measure_range)
+        measure_channel = Channel(number=input_channel,pulsed_spot=PulsedSpot(input=Inputs.V,base=base,pulse=pulse,width=width, compliance=compliance,hold=hold),
+                                  measurement=measure_setup)
         ground_setup = DCForce(
             input=Inputs.V,
             value=0,
@@ -102,22 +106,22 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[measure_channel, ground],measurements=[measure_setup],)
+        test = TestSetup(channels=[measure_channel, ground],)
         return self.run_test(test)
 
     def pulsed_spot_I(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
-        measure_setup = Measurement(channel=input_channel,
-                                    config=MeasurePulsedSpot(target=Targets.V,
-                                                             side=MeasureSides.voltage_side,
-                                                             range=measure_range)
-                                    )
+        measure_setup = MeasurePulsedSpot(target=Targets.V,
+                        side=MeasureSides.voltage_side,
+                        range=measure_range)
+
         measure_channel = Channel(number=input_channel,
                                   pulsed_spot=PulsedSpot(input=Inputs.I,
                                                          base=base,
                                                          pulse=pulse,
                                                          width=width,
                                                          compliance=compliance,
-                                                         hold=hold)
+                                                         hold=hold),
+                                    measurement=measure_setup
                                   )
         ground_setup = DCForce(
             input=Inputs.I,
@@ -126,14 +130,13 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[measure_channel, ground],
-                         measurements=[measure_setup],)
+        test = TestSetup(channels=[measure_channel, ground],)
         return self.run_test(test)
 
     def DC_spot_I(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_I.full_auto, power_comp=None,
             measure_range=MeasureRanges_V.full_auto):
-        measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
+        measure = MeasureSpot(target=Inputs.V,range=measure_range)
         measure_channel = Channel(number=input_channel,
                           dcforce=DCForce(input=Inputs.I,
                                            value=input_value,
@@ -147,13 +150,13 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
+        test = TestSetup(channels=[measure_channel, ground],)
         self.run_test(test)
 
     def DC_spot_V(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_V.full_auto, power_comp=None,
             measure_range=MeasureRanges_I.full_auto):
-        measure = Measurement(channel=input_channel, config= MeasureSpot(target=Inputs.V,range=measure_range))
+        measure = MeasureSpot(target=Inputs.V,range=measure_range)
         measure_channel = Channel(number=input_channel,
                           dcforce=DCForce(input=Inputs.V,
                                            value=input_value,
@@ -167,7 +170,7 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[measure_channel, ground],measurements=[measure],)
+        test = TestSetup(channels=[measure_channel, ground],)
         self.run_test(test)
 
     def DC_sweep_I(
@@ -182,11 +185,9 @@ class B1500():
         sweepmode=SweepMode.linear_up_down,
         power_comp=None,
      measure_range=MeasureRanges_I.full_auto):
-        measure_setup = Measurement(
-            channel=input_channel,
-            config=MeasureStaircaseSweep(target=Targets.V,
+        measure_setup = MeasureStaircaseSweep(target=Targets.V,
             side=MeasureSides.current_side,
-            range=measure_range))
+            range=measure_range)
         if input_range is None:
             input_range = minCover_I(start, stop)
         if measure_range is None:
@@ -211,7 +212,7 @@ class B1500():
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
-        test = TestSetup(channels=[in_channel, ground],measurements=[measure_setup],)
+        test = TestSetup(channels=[in_channel, ground],)
         return self.run_test(test)
 
     def run_test(self, test_tuple):
@@ -224,12 +225,10 @@ class B1500():
             highspeed_adc_mode=test_tuple.highspeed_adc_mode)
         for channel in test_tuple.channels:
             self.setup_channel(channel)
-        for measurement in test_tuple.measurements:
-            self.setup_measurement(measurement)
         try:
             # resets timestamp, executes and optionally waits for answer,
             # returns data with elapsed
-            ret = self.execute(test_tuple.measurements)
+            ret = self.execute(test_tuple)
         finally:
             for channel in test_tuple.channels:
                 self.teardown_channel(channel)
@@ -249,25 +248,24 @@ class B1500():
             "AAD {},{}".format(
                 channel.number,
                 channel.channel_adc))  # sets channel adc type
-        # TODO add further channel and measurement setup
+        if channel.measurement:
+            self.setup_measurement(channel.number, channel.measurement)
+
         if channel.dcforce is not None:
-            return self.dc_force(channel.number, channel.dcforce)
+            self.dc_force(channel.number, channel.dcforce)
         elif channel.staircase_sweep is not None:
-            return self.staircase_sweep(channel.number, channel.staircase_sweep)
+            self.staircase_sweep(channel.number, channel.staircase_sweep)
         elif channel.pulse_sweep is not None:
-            return self.pulse_sweep(channel.number, channel.pulse_sweep)
+            self.pulse_sweep(channel.number, channel.pulse_sweep)
         elif channel.pulsed_spot is not None:
-            return self.pulsed_spot(channel.number, channel.pulsed_spot)
+            self.pulsed_spot(channel.number, channel.pulsed_spot)
         elif channel.quasipulse is not None:
             return self.quasi_pulse(channel.number, channel.quasipulse)
         elif channel.highspeed_spot is not None:
-            return self.highspeed_spot_setup(
+            self.highspeed_spot_setup(
                 channel.number, channel.highspeed_spot)
-        # everything below this comment is not yet implemented
-        elif channel.spot is not None:
-            return self.spot(channel.number, channel.spot)
-        elif channel.SPGU is not None:
-            return self.SPGU(channel.number, channel.SPGU)
+        elif channel.spgu is not None:
+            self.spgu(channel.number, channel.spgu)
         else:
             raise ValueError(
                 "At least one force should be in the channel, maybe you forgot to force ground to 0?")
@@ -306,8 +304,8 @@ class B1500():
                         channel_number,
                         highspeed_setup.mode))
 
-    def setup_measurement(self, measurement):
-        if measurement.config.mode in [
+    def setup_measurement(self,channel, measurement):
+        if measurement.mode in [
             MeasureModes.spot,
             MeasureModes.staircase_sweep,
             MeasureModes.sampling,
@@ -320,8 +318,8 @@ class B1500():
             MeasureModes.staircase_sweep_pulsed_bias,
             MeasureModes.quasi_pulsed_spot,
         ]:
-            self.measure_single_setup(measurement.channel, measurement.config,)
-        elif measurement.config.mode in [
+            self.measure_single_setup(channel, measurement)
+        elif measurement.mode in [
             MeasureModes.spot_C,
             MeasureModes.pulsed_spot_C,
             MeasureModes.pulsed_sweep_CV,
@@ -329,11 +327,11 @@ class B1500():
             MeasureModes.sweep_CV,
             MeasureModes.sampling_Ct,
         ]:
-            self.setup_C_measure(measurement.channel, measurement.config, )
-        elif measurement.config.mode == MeasureModes.quasi_static_cv:
+            self.setup_C_measure(channel, measurement, )
+        elif measurement.mode == MeasureModes.quasi_static_cv:
             self.setup_quasi_static_cv(measurement.channel, measurement.config)
-        elif measurement.config.mode in [MeasureModes.linear_search, MeasureModes.binary_search]:
-            self.setup_search(measurement.channel, measurement.config)
+        elif measurement.mode in [MeasureModes.linear_search, MeasureModes.binary_search]:
+            self.setup_search(channel, measurement)
         else:
             raise ValueError("Unknown Measuremode")
 
@@ -520,44 +518,53 @@ class B1500():
         self._device.write("BDV {},{}".format(
             channel_number, *["{}".format(x) for x in quasi_setup[2:6]]))
 
-    def SPGU(self, channel_number, spgu_setup):
-        self.set_SPGU_wavemode(spgu_setup.mode)
-        self.set_SPGU_outputmode(spgu_setup.outputmode, spgu_setup.condition)
-        self.set_SPGU_pulse_switch(channel, spgu_setup.switch_state, spgu_setup.switch_normal, spgu_setup.switch_delay, spgu_setup.switch_delay)   #ODSW
-        self.set_SPGU_loadimpedance(channel, spgu_setup.loadZ)  # SER
-        self.set_SPGU_pulse_period(spgu_setup.pulseperiod)  # SPPER
-        self.set_SPGU_pulse_levels(channel, spgu_setup.pulse_levels, spgu_setup.pulse_base, spgu_setup.pulse_peak, spgu_setup.pulse_src)  # SPM, SPV/SPI, check if pulse_src==source
-        self.set_SPGU_pulse_timing(channel, spgu_setup.source, spgu_setup.pulse_delay, spgu_setup.pulse_width, spgu_setup.pulse_leading, spgu_setup.pulse_trailing,)  # SPT
-        self.set_SPGU_apply(channel)  # SPUPD
 
-    def set_SPGU_outputmode(outputmode, condition):
-        self._device.write("SPRM {},{}".format(",".join(["{}".format(x) for x in [outputmode, condition] if x])))
+    def spgu(self, channel_number, spgu_setup):
+        self.set_SPGU_wavemode(spgu_setup.wavemode)
+        self.set_SPGU_output_mode(spgu_setup.output_mode, spgu_setup.condition)
+        self.set_SPGU_pulse_switch(channel_number, spgu_setup.switch_state, spgu_setup.switch_normal, spgu_setup.switch_delay, spgu_setup.switch_width)   #ODSW
+        self.set_SPGU_pulse_period(spgu_setup.pulse_period)  # SPPER
+        if spgu_setup.wavemode == SPGUModes.Pulse:
+            self.set_SPGU_pulse_levels(channel_number, spgu_setup.pulse_level_sources, spgu_setup.pulse_base, spgu_setup.pulse_peak, spgu_setup.pulse_src)  # SPM, SPV, check if pulse_src==source
+        else:
+            raise NotImplementedError("Arbitrary Linear Wavemode will be added in a later release")
+        self.set_SPGU_pulse_timing(channel_number, spgu_setup.timing_source, spgu_setup.pulse_delay, spgu_setup.pulse_width, spgu_setup.pulse_leading, spgu_setup.pulse_trailing,)  # SPT
+        self.set_SPGU_apply(channel_number)  # SPUPD
+        if spgu_setup.loadZ == SPGUOutputImpedance.full_auto:
+            self.set_SPGU_loadimpedance_auto(channel_number)
+        else:
+            self.set_SPGU_loadimpedance(channel_number, spgu_setup.loadZ)  # SER
+
+    def set_SPGU_apply(self, channel):
+        self._device.write("SPUPD {}".format(channel))
+
+    def set_SPGU_pulse_timing(self, channel, source, delay, width, leading, trailing):
+        self._device.write("SPT {}".format(",".join(["{}".format(x)  for x in [channel, source, delay, width, leading, trailing]])))
+
+    def set_SPGU_pulse_levels(self, channel, level_sources, base, peak, pulse_src):
+        self._device.write("SPM {},{}".format(channel, level_sources))
+        self._device.write("SPV {},{},{},{}".format(channel, pulse_src, base, peak))
+
+
+    def set_SPGU_loadimpedance(self, channel, loadZ):
+            self._device.write("SER {},{}".format(channel, loadZ))
+
+    def set_SPGU_loadimpedance_auto(self, channel,update_impedance=1, delay=0, interval=5e-6,count=1 ):
+            self._device.write("CORRSER? {},{},{},{},{}".format(channel, update_impedance, delay, interval, count ))
+            # execute a single measurement and set the output load
+
+    def set_SPGU_pulse_period(self, pulse_period):
+        self._device.write("SPPER {}".format(pulse_period))
+
+    def set_SPGU_pulse_switch(self, channel, switch_state, switch_normal, switch_delay, width):
+        self._device.write("ODSW {},{},{},{},{}".format(channel, switch_state, switch_normal, switch_delay, width ))
+
+    def set_SPGU_output_mode(self, output_mode, condition):
+        self._device.write("SPRM {}".format(",".join(["{}".format(x) for x in [output_mode, condition] if x])))
 
     def set_SPGU_wavemode(self, mode):
         self._device.write("SIM {}".format(mode))
         pass
-    """
-        ("CN " & sp_ch(0) & "," & sp_ch(1) & vbLf)
-        (SIM 0" & vbLf)
-        ("SPRM 2," & duration & vbLf)
-        ("ODSW " & sp_ch(0) & ", 0" & vbLf)
-        ("ODSW " & sp_ch(1) & ", 0" & vbLf)
-        ("SER " & sp_ch(0) & "," & loadz & vbLf)
-        ("SER " & sp_ch(1) & "," & loadz & vbLf)
-        ("SPPER " & period & vbLf)
-        ("SPM " & sp_ch(0) & ",1" & vbLf)
-        ("SPT " & sp_ch(0) & ",1," & p1_del & "," & p1_wid & "," &
-        p_lead & "," & p_trail & vbLf)
-        ("SPV " & sp_ch(0) & ",1," & p1_base & "," & p1_peak & vbLf)
-        ("SPM " & sp_ch(1) & ",3" & vbLf)
-        ("SPT " & sp_ch(1) & ",1," & p2_del1 & "," & p2_wid1 & "," &
-        p_lead & "," & p_trail & vbLf)
-        ("SPT " & sp_ch(1) & ",2," & p2_del2 & "," & p2_wid2 & "," &
-        p_lead & "," & p_trail & vbLf)
-        ("SPV " & sp_ch(1) & ",1," & p2_base1 & "," & p2_peak1 & vbLf)
-        ("SPV " & sp_ch(1) & ",2," & p2_base2 & "," & p2_peak2 & vbLf)
-        ("SPUPD" & sp_ch(0) & "," & sp_ch(1) & vbLf)
-        """
 
     def teardown_channel(self, channel):
         # force voltage to 0
@@ -568,7 +575,8 @@ class B1500():
     def set_format(self, format, output_mode):
         self._device.write("FMT {},{}".format(format, output_mode))
 
-    def execute(self, measurements, force_wait=True, autoread=True):
+    def execute(self, test_tuple, force_wait=True, autoread=True):
+        channels = test_tuple.channels
         # need to figure out a proper interface on how to kick of and read out
         # measurement data
         # propably implement as genrator, as that will allow the switch betweenstreaming
@@ -577,34 +585,37 @@ class B1500():
         data = None
         # look at first measurement only, since we can only measure one type of
         # XE, SPGU, ... at once
-        if isinstance(measurements[0],("ALL_XE_MEASUREMENTS")):
+        if any([c.measurement and c.measurement.mode in(
+            MeasureModes.spot,
+            MeasureModes.staircase_sweep,
+            MeasureModes.sampling,
+            MeasureModes.multi_channel_sweep,
+            MeasureModes.CV_sweep_dc_bias,
+            MeasureModes.multichannel_pulsed_spot,
+            MeasureModes.multichannel_pulsed_sweep,
+            MeasureModes.pulsed_spot,
+            MeasureModes.pulsed_sweep,
+            MeasureModes.staircase_sweep_pulsed_bias,
+            MeasureModes.quasi_pulsed_spot,
+        ) for c in channels]):
             # triggered by XE=> NUB gets all the data
             exc = self._device.query("XE")
             if force_wait:
-                exc = self._device.write("*OPC?")
+                ready = 0
+                while ready == 0:
+                    ready = self._device.query("*OPC?")
             if autoread:
                 data = self._device.query("NUB?")
-        elif isinstance(measurements[0], MeasureSPGU):
+        elif any([x.spgu for x in channels]):
             exc= self.start_SPGU()
-            if autoread:
-                data = []
-                for measurement in measurements:
-                    # for SPGU, if we "read" it we need to read out individual
-                    # channels
-                    data.append(self._device.query("CORRSER? {},{},{},{},{}".format(measurements[0].channel,
-                                                                           measurements[0].update_impedance,
-                                                                           measurements[0].delay,
-                                                                           measurements[0].interval,
-                                                                           measurements[0].count))
-                                )
-        elif isinstance(measurements[0],   ):
-            pass
+        # elif any([isinstance(x.measurement, ) for x in channels]):
+        #     pass
         return (exc,data)
 
     def start_SPGU(self):
         self._device.write("SPR")
         busy = 1
-        while busy:
+        while busy==1:
             busy = self._device.query("SPST?")
 
     def set_adc_global(

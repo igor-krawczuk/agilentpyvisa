@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import IntEnum, Enum
 
 class Inputs(IntEnum):
     V = 0
@@ -9,6 +9,36 @@ class Targets(IntEnum):
     I = 1
     VI = 2
     C = 3
+
+class SPGULevels(IntEnum):
+    DC_1_level = 0
+    Signal1_2_levels = 1
+    Signal2_2_levels = 2
+    BothSignals_3_levels = 3
+
+class SPGUSignals(IntEnum):
+    Signal1 = 1
+    Signal2 = 2
+
+class SPGUModes(IntEnum):
+    Pulse = 0
+    ArbitraryLinearWave = 1
+
+class SPGUOutputModes(IntEnum):
+    freerun = 0
+    count = 1
+    duration = 2
+
+class SPGUOutputImpedance(Enum):
+    full_auto = -1
+
+class SPGUSwitch(IntEnum):
+    disabled = 0
+    enabled = 1
+
+class SPGUSwitchNormal(IntEnum):
+    open = 0
+    closed = 1
 
 class InputRanges_V(IntEnum):
     full_auto = 0

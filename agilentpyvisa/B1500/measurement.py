@@ -2,10 +2,6 @@ from collections import namedtuple
 from .enums import *
 from .enums import MeasureSides,MeasureRanges_I,MeasureRanges_V, MeasureModes
 
-class Measurement(namedtuple("__Measurement",["channel","config",])):
-    def __new__(cls,channel, config):
-        return super(Measurement, cls).__new__(cls, channel, config)
-
 class MeasureStaircaseSweep(namedtuple("__MeasureStaircaseSweep",["target","range","side","mode"])):
     def __new__(cls,target,range=MeasureRanges_I.full_auto,side=MeasureSides.compliance_side):
         # full_auto the same in I and V (=0)

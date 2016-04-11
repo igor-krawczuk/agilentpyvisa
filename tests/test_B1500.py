@@ -10,13 +10,13 @@ class DummyTester():
         pass
 
     def query(*args, **kwargs):
-        print([x for x in args if isinstance(x, str)])
+        print(*[x for x in args if isinstance(x, str)])
         if kwargs:
             print(kwargs)
-        return False
+        return None
 
     def write(*args, **kwargs):
-        print([x for x in args if isinstance(x, str)])
+        print(*[x for x in args if isinstance(x, str)])
         if kwargs:
             print(kwargs)
 
@@ -69,7 +69,6 @@ def test_pulsed_spot_I(tester):
                          compliance=1)
 
 def test_SPGU_V(tester):
-    tester.SPGU_V()
+    print("SPGU_V")
+    tester.SPGU_V("input_channel",0,1,1)
 
-def test_SPGU_I(tester):
-    tester.SPGU_V()
