@@ -45,14 +45,35 @@ class B1500():
     def query(self, msg):
         query_logger.info(msg)
         retval = self._device.query(msg)
-        query_logger.info(retval)
+        query_logger.info(str(retval)+"\n")
         return retval
 
     def write(self, msg):
         write_logger.info(msg)
         retval = self._device.write(msg)
-        write_logger.info(retval)
+        write_logger.info(str(retval)+"\n")
         return retval
+
+    def check_modules(self, explain=False):
+        ret = self.query("LOP?")
+        if explain:
+            raise NotImplementedError("Explanation functionality\
+to annotate error codes will come in a future release")
+        return ret
+
+    def check_settings(self, parameter):
+        ret = self.query("*LRN? {}".format(parameter))
+        return ret
+
+    def set_DIO_control(self, mode, state):
+        ret = self.write("ERMOD {},{}".format(mode, state))
+        return ret
+
+    def check_DIO_control(self):
+        ret = self.query("ERMOD?")
+        return ret
+
+
 
     def operations_completed(self):
         query = "*OPC?"

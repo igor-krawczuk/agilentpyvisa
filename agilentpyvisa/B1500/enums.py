@@ -1,5 +1,63 @@
 from enum import IntEnum, Enum
 
+class DIO_ControlModes(IntEnum):
+    GeneralPurpose = 0
+    SMU_PGU_16440A = 1
+    B1500A_A04 = 1
+    N1258A = 2
+    N1259A = 2
+    N1265A = 4
+    N1266A = 8
+    N1268A = 16
+
+class DIO_ControlState(IntEnum):
+    disabled = 0
+    enabled = 1
+
+class ParameterSettings(IntEnum):
+    OutputSwitchOnOff = 0
+    StatusSMU_MFCMU = 1
+    FilterOnOff = 30
+    TM_HighSpeedSamples_CM_Format_MeasureMode = 31
+    MeasureRange = 32
+    StaircaseSweep = 33
+    PulsedSource = 34
+    QuasiPulsed = 37
+    DigitalIO = 38
+    ChannelMapping = 40
+    MeasureSide = 46
+    Sampling = 47
+    QuasiStaticCV =49
+    LinearSearch = 50
+    BinarySearch = 51
+    SeriesResistor= 53
+    AutoRanging = 54
+    ADCType = 55
+    ADCSamples = 56
+    SourceWait = 57
+    Trigger = 58
+    MultiChannelSweepSource = 59
+    TimeStamp = 59
+    Display = 60
+    ASU_Path = 62
+    AutoRanging1pA = 63
+    ASU_ConnectionStatus = 64
+    MFCMU_MeasureMode =70
+    MFCMU_OutputMode = 71
+    MFCMU_ADC = 72
+    MFCMU_Range = 73
+    SCUU_ConnectionStatus = 80
+    SCUU_ConnectionPath = 81
+    MFCMU_AdjusmentMode = 90
+    CV_DC_bias_sweep = 100
+    CV_pulsed = 101
+    Cf_sweep = 102
+    CV_AC_level_sweep = 103
+    Ct_sampling = 104
+    MultiChannelPulsedSpot = 105
+    MultiChannelPulsedSweep = 106
+    ParallelMeasurementMode = 110
+
 class Inputs(IntEnum):
     V = 0
     I = 1

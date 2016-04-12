@@ -4,6 +4,9 @@ import agilentpyvisa
 import visa
 import ipdb
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 class DummyTester():
 
     def __init__(self, *args,**kwargs):
