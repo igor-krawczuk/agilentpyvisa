@@ -16,7 +16,12 @@ class DummyTester():
         print(*[x for x in args if isinstance(x, str)])
         if kwargs:
             print(kwargs)
-        return None
+        if any(("UNT" in x for x in args if type(x)is str)):
+            return ";".join(["B1517A,0"]*5)
+        elif any(("LRN" in x for x in args if type(x)is str)):
+            return "CL101"
+        else:
+            return "None"
 
     def write(*args, **kwargs):
         print(*[x for x in args if isinstance(x, str)])
@@ -28,6 +33,8 @@ class DummyTester():
 def tester(monkeypatch):
     def mock(self,*args):
         self._device = DummyTester()
+        self.slots_installed = self._discover_slots()
+        self.sub_channels = list(range(10))
     monkeypatch.setattr(B1500, "__init__", mock)
     b= B1500("test",)
     return b
@@ -73,5 +80,5 @@ def test_pulsed_spot_I(tester):
 
 def test_SPGU_V(tester):
     print("SPGU_V")
-    tester.SPGU_V("input_channel",0,1,1)
+    tester.SPGU_V(1,0,1,1)
 

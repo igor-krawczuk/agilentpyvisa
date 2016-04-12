@@ -20,18 +20,84 @@ from .helpers import minCover_I, minCover_V
 from logging import getLogger
 query_logger = getLogger(__name__+":query")
 write_logger = getLogger(__name__+":write")
+exception_logger = getLogger(__name__+":write")
 
+def availableInputRanges(model):
+    """ Returns tuples of the available OutputRanging used for input_range settings, based on the model. Based on Pages 4-22 and 4-16 of B1500 manual"""
+    if model =="B1510A":  # HPSMU High power source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,20,200,400,1000,2000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(11,21)))])
+    if model in ("B1511A","B1511B"):  # MPSMU Medium power source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
+    if model =="B1512A":  # HCSMU High current source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2,200,400,)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0,22]+list(range(15,21)))])
+    if model in ("B1513A", "B1513B"):  # HVSMU High voltage source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2000,5000,15000,30000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(11,20)))])
+    if model =="B1514A":  # MCSMU Medium current source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2,200,400,)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(15,21)))])
+    if model =="B1517A":  # HRSMU High resolution source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
+    if model =="B1520A":  # MFCMU or CMU Multi frequency capacitance measurement unit
+        raise NotImplementedError("This device is not yet supported")
+    elif model =="B1525A":  # HVSPGU or SPGU High voltage semiconductor pulse generator unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in ()]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in ()])
+    else:
+        raise NotImplementedError("This device is not yet supported")
+
+def availableMeasureRanges(model):
+    raise NotImplementedError("This device is not yet supported")
 
 class B1500():
     def __init__(self, tester):
         self.__rm = visa.ResourceManager()
         self._device = self. __rm.open_resource(tester)
         self.tests = OrderedDict()
+        self.slots_installed={}
+        self.sub_channels = []
 
     def init(self):
         self.reset()
+        self.slots_installed = self._discover_slots()
+        self.sub_channels = self._discover_channels()
         self.check_err()
 
+    def _discover_slots(self):
+        slots = {}
+        ret = self.check_modules()
+        for i,x in enumerate(ret.strip().split(";")):
+            if x!="0,0":
+                slots[i+1]={"type":x.split(",")[0],"revision":x.split(",")[1]}
+            else:
+                slots[i+1]=None
+        for k in slots.keys():
+            if slots[k]:
+                slots[k]["InputRanges"]=availableInputRanges(slots[k]["type"])
+                #slots[k]["MeasureRanges"]=availableMeasureRanges(slots[k]["type"])
+        return slots
+
+
+    def check_modules(self, mainframe=False):
+        if mainframe:
+            return self.query("UNT? 1")
+        else:
+            return self.query("UNT? 0")
+
+    def _discover_channels(self):
+        channels= []
+        for i in range(10):
+            try:
+                ret = self.check_settings(ParameterSettings.StatusSlot1+i)
+            except VisaIOError as e:
+                exception_logger.debug("Caught exception\n {} \n as part of discovery prodecure, assuming no module in slot {}".format(e,i))
+            channels.extend([int(x.replace("CL","")) for x in ret.strip().split(";")])
+        exception_logger.info("Found the folliwing channels\n{}".format(channels))
+        return tuple(channels)
 
     def reset(self):
         query = "*RST"
@@ -42,19 +108,23 @@ class B1500():
         query = "ERRX?"
         return self.query(query)
 
-    def query(self, msg):
+    def query(self, msg, check_error=False):
         query_logger.info(msg)
         retval = self._device.query(msg)
         query_logger.info(str(retval)+"\n")
+        if check_error:
+            self.check_err()
         return retval
 
-    def write(self, msg):
+    def write(self, msg, check_error=False):
         write_logger.info(msg)
         retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
+        if check_error:
+            self.check_err()
         return retval
 
-    def check_modules(self, explain=False):
+    def check_module_operation(self, explain=False):
         ret = self.query("LOP?")
         if explain:
             raise NotImplementedError("Explanation functionality\
@@ -261,11 +331,11 @@ to annotate error codes will come in a future release")
             adc_modes=test_tuple.adc_modes,
             highspeed_adc_number=test_tuple.highspeed_adc_number,
             highspeed_adc_mode=test_tuple.highspeed_adc_mode)
-        for channel in test_tuple.channels:
-            self.setup_channel(channel)
         try:
-            # resets timestamp, executes and optionally waits for answer,
-            # returns data with elapsed
+            for channel in test_tuple.channels:
+                self.setup_channel(channel)
+                # resets timestamp, executes and optionally waits for answer,
+                # returns data with elapsed
             ret = self.execute(test_tuple)
         finally:
             for channel in test_tuple.channels:
@@ -275,17 +345,27 @@ to annotate error codes will come in a future release")
     def set_filter(self, filter):
         return self.write("FL {}".format(filter))
 
+    def open_channel(self, number):
+        if number not in self.sub_channels:
+            raise ValueError("Channel {} not available on device, only \n{}\n are available".format(number,self.sub_channels))
+        return self.write("CN {}".format(number))  # connect channel
+    def set_series_resistance(self, channel, state):
+        return self.write(
+            "SSR {},{}".format(
+                channel,
+                state))  # connects or disconnects 1MOhm series
+
+    def set_channel_ADC_type(self, channel, adc):
+        return self.write(
+            "AAD {},{}".format(
+                channel,
+                adc))  # sets channel adc type
+
     def setup_channel(self, channel):
         # connect channel
-        self.write("CN {}".format(channel.number))  # connect channel
-        self.write(
-            "SSR {},{}".format(
-                channel.number,
-                channel.series_resistance))  # connects or disconnects 1MOhm series
-        self.write(
-            "AAD {},{}".format(
-                channel.number,
-                channel.channel_adc))  # sets channel adc type
+        self.open_channel(channel.number)
+        self.set_series_resistance(channel.number, channel.series_resistance)
+        self.set_channel_ADC_type(channel.number, channel.channel_adc)
         if channel.measurement:
             self.setup_measurement(channel.number, channel.measurement)
 
@@ -496,6 +576,8 @@ to annotate error codes will come in a future release")
             self.set_measure_range(channel, config.target, config.range)
 
     def dc_force(self, channel_number, force_setup):
+        if force_setup.input_range not in self.slots_installed.get(channel_number)["InputRanges"]:
+            exception_logger.warn("Input range of channel not available for installed slot, might cause errors".format(channel_number))
         force_query = ",".join(["{}".format(x) for x in force_setup[1:] if x is not None])
         if force_setup.input == Inputs.V:
             return self.write(
@@ -606,6 +688,8 @@ to annotate error codes will come in a future release")
         pass
 
     def teardown_channel(self, channel):
+        if channel.number not in self.sub_channels:
+            exception_logger.warn("No channel {} installed, only have \n{}\n, proceeding with teardown but call check_err and verify your setup".format(channel, self.sub_channels))
         # force voltage to 0
         self.write("DZ {}".format(channel.number))
         # disconnect channel

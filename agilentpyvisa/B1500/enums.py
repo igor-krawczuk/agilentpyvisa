@@ -14,9 +14,37 @@ class DIO_ControlState(IntEnum):
     disabled = 0
     enabled = 1
 
+class SPGUSwitch(IntEnum):
+    disabled = 0
+    enabled = 1
+
+class AutoAbort(IntEnum):
+    disabled = 1
+    enabled = 2
+
+class SeriesResistance(IntEnum):
+    disabled = 0
+    enabled = 1
+
+class Filter(IntEnum):
+    disabled = 0
+    enabled = 1
+
 class ParameterSettings(IntEnum):
+    """ This Enum covers the Mode Arguments to *LRN? as descibed on page 432ff
+    of the B1500 Manual"""
     OutputSwitchOnOff = 0
-    StatusSMU_MFCMU = 1
+    StatusSlot1 = 1
+    StatusSlot2 = 2
+    StatusSlot3 = 3
+    StatusSlot4 = 4
+    StatusSlot5 = 5
+    StatusSlot6 = 6
+    StatusSlot7 = 7
+    StatusSlot8 = 8
+    StatusSlot9 = 9
+    StatusSlot10= 10
+
     FilterOnOff = 30
     TM_HighSpeedSamples_CM_Format_MeasureMode = 31
     MeasureRange = 32
@@ -90,9 +118,6 @@ class SPGUOutputModes(IntEnum):
 class SPGUOutputImpedance(Enum):
     full_auto = -1
 
-class SPGUSwitch(IntEnum):
-    disabled = 0
-    enabled = 1
 
 class SPGUSwitchNormal(IntEnum):
     open = 0
@@ -101,6 +126,7 @@ class SPGUSwitchNormal(IntEnum):
 class InputRanges_V(IntEnum):
     full_auto = 0
     V0_2_limited = 2
+    V0_5_limited = 5
     V2_limited = 20
     V5_limited = 50
     V20_limited = 200
@@ -133,6 +159,7 @@ class InputRanges_I(IntEnum):
 class OutputRanges_V(IntEnum):
     full_auto = 0
     V0_2_limited = 2
+    V0_5_limited = 5
     V2_limited = 20
     V5_limited = 50
     V20_limited = 200
@@ -200,6 +227,7 @@ class MeasureRanges_V(IntEnum):
     pulse_compliance = 0 # 0, 8-23 with pulse is compliace range, minimum range that covers compliance value
     #limited auto ranging
     V0_2_limited = 2
+    V0_5_limited = 5
     V2_limited = 20
     V5_limited = 50
     V20_limited = 200
@@ -210,6 +238,7 @@ class MeasureRanges_V(IntEnum):
     V3000_limited = 30000
     # fixed raning
     V0_2_fixed = -2
+    V0_5_fixed = -5
     V2_fixed = -20
     V5_fixed = -50
     V20_fixed = -200
@@ -266,9 +295,6 @@ class SweepMode(IntEnum):
     linear_up_down = 3
     log_up_down = 3
 
-class AutoAbort(IntEnum):
-    disabled = 1
-    enabled = 2
 
 class PulsePeriod(IntEnum):
     minimum = -1
@@ -279,9 +305,6 @@ class Polarity(IntEnum):
     auto = 0
     manual = 1
 
-class SeriesResistance(IntEnum):
-    disabled = 0
-    enabled = 1
 
 class Format(IntEnum):
     ascii12_with_header_crl = 1 # compatible with 412B
@@ -306,9 +329,6 @@ class OutputMode(IntEnum):
     # MM16, MM27, and MM28 1-10 select sweep source set by the WNX, MCPNX,
     # or MCPWNX command
 
-class Filter(IntEnum):
-    disabled = 0
-    enabled = 1
 
 class ADCTypes(IntEnum):
     highspeed = 0
