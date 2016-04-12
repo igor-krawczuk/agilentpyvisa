@@ -17,14 +17,15 @@ from .measurement import (
                           MeasureSPGU)
 from .setup import *
 from .helpers import minCover_I, minCover_V
-
-
+from logging import getLogger
+query_logger = getLogger(__name__+":query")
+write_logger = getLogger(__name__+":write")
 
 
 class B1500():
     def __init__(self, tester):
         self.__rm = visa.ResourceManager()
-        self._device = self.__rm.open_resource(tester)
+        self._device = self. __rm.open_resource(tester)
         self.tests = OrderedDict()
 
     def init(self):
@@ -33,29 +34,45 @@ class B1500():
 
 
     def reset(self):
-        return self._device.query("*RST?")
+        query = "*RST"
+        return self.write(query)
+
 
     def check_err(self):
-        return self._device.query("ERR?")  # get errnumber, ermsg
+        query = "ERRX?"
+        return self.query(query)
+
+    def query(self, msg):
+        query_logger.info(msg)
+        retval = self._device.query(msg)
+        query_logger.info(retval)
+        return retval
+
+    def write(self, msg):
+        write_logger.info(msg)
+        retval = self._device.write(msg)
+        write_logger.info(retval)
+        return retval
 
     def operations_completed(self):
-        return self._device.query("*OPC?")
+        query = "*OPC?"
+        return self.query(query)
 
     def add_test(name, test_tuple):
         self.tests[name] = test_tuple
 
     def enable_timestamp(self, state):
         if state:
-            return self._device.write("TSC {}".format(1))
+            return self.write("TSC {}".format(1))
         else:
-            return self._device.write("TSC {}".format(0))
+            return self.write("TSC {}".format(0))
 
 
     def zero_channel(self, channel_number):
-        return self._device.write("DZ {}".format(channel_number))
+        return self.write("DZ {}".format(channel_number))
 
     def restore_channel(self, channel_number):
-        return self._device.write("RZ {}".format(channel_number))
+        return self.write("RZ {}".format(channel_number))
 
     def SPGU_V(self, input_channel, pulse_base, pulse_peak, pulse_width):
         pulse_channel=Channel(number=input_channel, spgu=SPGU(pulse_base, pulse_peak,pulse_width))
@@ -235,16 +252,16 @@ class B1500():
         return ret
 
     def set_filter(self, filter):
-        return self._device.write("FL {}".format(filter))
+        return self.write("FL {}".format(filter))
 
     def setup_channel(self, channel):
         # connect channel
-        self._device.write("CN {}".format(channel.number))  # connect channel
-        self._device.write(
+        self.write("CN {}".format(channel.number))  # connect channel
+        self.write(
             "SSR {},{}".format(
                 channel.number,
                 channel.series_resistance))  # connects or disconnects 1MOhm series
-        self._device.write(
+        self.write(
             "AAD {},{}".format(
                 channel.number,
                 channel.channel_adc))  # sets channel adc type
@@ -269,6 +286,7 @@ class B1500():
         else:
             raise ValueError(
                 "At least one force should be in the channel, maybe you forgot to force ground to 0?")
+        return self.check_err()
 
     def highspeed_spot_setup(self, channel_number, highspeed_setup):
         if highspeed_setup.target == Targets.C:
@@ -276,30 +294,30 @@ class B1500():
 
     def highspeed_spot(self, channel_number, highspeed_setup):
         if highspeed_setup.target == Targets.I:
-            self._device.write(
+            self.write(
                 "TTI {},{}".format(
                     channel_number,
                     highspeed_setup.irange))
         elif highspeed_setup.target == Targets.V:
-            self._device.write(
+            self.write(
                 "TTV {},{}".format(
                     channel_number,
                     highspeed_setup.vrange))
         elif highspeed_setup.target == Targets.IV:
-            self._device.write(
+            self.write(
                 "TTIV {},{}".format(
                     channel_number,
                     highspeed_setup.irange,
                     highspeed_setup.vrange))
         elif highspeed_setup.target == Targets.C:
             if highspeed_setup.mode == HighSpeedMode.fixed:
-                self._device.write(
+                self.write(
                     "TTC {},{},{}".format(
                         channel_number,
                         highspeed_setup.mode,
                         highspeed_setup.Rrange))
             else:
-                self._device.write(
+                self.write(
                     "TTC {},{}".format(
                         channel_number,
                         highspeed_setup.mode))
@@ -349,51 +367,51 @@ class B1500():
 
     def set_search_abort(self, mode, auto_abort):
         if mode == MeasuringModes.binary_search:
-            self._device.write("BSM {}".format(auto_abort))
+            self.write("BSM {}".format(auto_abort))
         else:
-            self._device.write("LSM {}".format(auto_abort))
+            self.write("LSM {}".format(auto_abort))
 
     def set_search_output(self, mode, data_output):
         if mode == MeasuringModes.binary_search:
-            self._device.write("BSVM {}".format(data_output))
+            self.write("BSVM {}".format(data_output))
         else:
-            self._device.write("LSVM {}".format(data_output))
+            self.write("LSVM {}".format(data_output))
 
     def set_search_timing(self, mode, hold, delay):
         if mode == MeasuringModes.binary_search:
-            self._device.write("BST {}".format(hold, delay))
+            self.write("BST {}".format(hold, delay))
         else:
-            self._device.write("LSTM {}".format(hold, delay))
+            self.write("LSTM {}".format(hold, delay))
 
     def set_search_monitor(self, mode, channel, search_mode, condition, measure_range, target_value):
         if mode == MeasuringModes.binary_search:
-            self._device.write("BGI {}".format(channel, search_mode, condition, measure_range, target_value))
+            self.write("BGI {}".format(channel, search_mode, condition, measure_range, target_value))
         else:
-            self._device.write("LGI {}".format(channel, search_mode, condition, measure_range, target_value))
+            self.write("LGI {}".format(channel, search_mode, condition, measure_range, target_value))
 
     def set_search_source(self, target, mode, channel, input_range, start, stop, compliance):
         if target == Targets.V:
             if mode == MeasuringModes.binary_search:
-                self._device.write("BSV {}".format(channel, input_range, start, stop, compliance))
+                self.write("BSV {}".format(channel, input_range, start, stop, compliance))
             else:
-                self._device.write("LSV {}".format(channel, input_range, start, stop, compliance))
+                self.write("LSV {}".format(channel, input_range, start, stop, compliance))
         else:
             if mode == MeasuringModes.binary_search:
-                self._device.write("BSSI {}".format(channel, input_range, start, stop, compliance))
+                self.write("BSSI {}".format(channel, input_range, start, stop, compliance))
             else:
-                self._device.write("LSSI {}".format(channel, input_range, start, stop, compliance))
+                self.write("LSSI {}".format(channel, input_range, start, stop, compliance))
 
     def set_search_synchronous_source(self, target, mode, channel, polarity,offset, compliance):
         if target == Targets.V:
             if mode == MeasuringModes.binary_search:
-                self._device.write("BSSV {}".format(channel, polarity, offset, compliance))
+                self.write("BSSV {}".format(channel, polarity, offset, compliance))
             else:
-                self._device.write("LSSV {}".format(channel, polarity, offset, compliance))
+                self.write("LSSV {}".format(channel, polarity, offset, compliance))
         else:
             if mode == MeasuringModes.binary_search:
-                self._device.write("BSSI {}".format(channel, polarity, offset, compliance))
+                self.write("BSSI {}".format(channel, polarity, offset, compliance))
             else:
-                self._device.write("LSSI {}".format(channel, polarity, offset, compliance))
+                self.write("LSSI {}".format(channel, polarity, offset, compliance))
 
 
     def setup_quasi_static_cv(self, channel, config):
@@ -406,44 +424,44 @@ class B1500():
         self.set_quasi_static_source()
 
     def set_quasi_static_compatibility(self, compat):
-        self._device("QSC {}".format(compat))
+        self.write("QSC {}".format(compat))
     def set_quasi_static_leakage(self, output, compensation):
-        self._device("QSL {}".format())
+        self.write("QSL {}".format())
     def set_quasi_static_abort(self, abort):
-        self._device("QSM {}".format(abort))
+        self.write("QSM {}".format(abort))
     def set_quasi_static_measure_range(self, range):
-        self._device("QSR {}".format(range))
+        self.write("QSR {}".format(range))
     def set_quasi_static_timings(self, C_integration, L_integration, hold, delay,delay1=0,delay2=0):
-        self._device("QST {},{},{},{}".format())
+        self.write("QST {},{},{},{}".format())
     def set_quasi_static_source(self, channel, mode, vrange, start, stop, capacitive_measure_voltage, step, compliance):
-        self._device("QSV {}".format())
+        self.write("QSV {}".format())
 
     def setup_C_measure(self, channel, config):
         self.adjust_paste_compensation(channel, config.auto_compensation, config.compensation_data)
         self.set_C_ADC_samples(self, config.adc_mode, config.ADC_coeff)
 
     def set_C_ADC_samples(self, mode, coeff=None):
-        self._device.write("ACT {}".format(",".join(["{}".format(x) for x in [adc_mode, coeff] if x])))
+        self.write("ACT {}".format(",".join(["{}".format(x) for x in [adc_mode, coeff] if x])))
 
     def adjust_phase_compensation(self, channel, auto_compensation, compensation_data):
-        self._device.write("ADJ {},{}".format(channel, config.auto_compensation))
-        self._device.write("ADJ? {},{}".format(channel, config.compensation_data))
+        self.write("ADJ {},{}".format(channel, config.auto_compensation))
+        self.write("ADJ? {},{}".format(channel, config.compensation_data))
 
     def set_measure_mode(self, mode, channel):
-        self._device.write(
+        self.write(
         "MM {}".format(",".join(["{}".format(x) for x in [mode, channel]])))
 
     def set_measure_side(self, channel, side):
-        self._device.write("CMM {},{}".format(channel, side))
+        self.write("CMM {},{}".format(channel, side))
 
     def set_measure_range(self, channel, target, range):
             if target == Inputs.V:
-                self._device.write(
+                self.write(
                     "RV {},{}".format(
                         channel,
                         range))  # sets channel adc type
             else:
-                self._device.write(
+                self.write(
                     "RI {},{}".format(
                         channel,
                         range))  # sets channel adc type
@@ -459,31 +477,31 @@ class B1500():
     def dc_force(self, channel_number, force_setup):
         force_query = ",".join(["{}".format(x) for x in force_setup[1:] if x is not None])
         if force_setup.input == Inputs.V:
-            return self._device.write(
+            return self.write(
                 "DV {},{}".format(
                     channel_number,
                     force_query))
         if force_setup.input == Inputs.I:
-            return self._device.write(
+            return self.write(
                 "DI {},{}".format(
                     channel_number,
                     force_query))
 
     def staircase_sweep(self, channel_number, sweep_setup):
-        self._device.write(
+        self.write(
             "WT {},{}".format(
                 sweep_setup.hold,
                 sweep_setup.delay))
-        self._device.write("WM {}".format(sweep_setup.auto_abort))
+        self.write("WM {}".format(sweep_setup.auto_abort))
         if sweep_setup.input == Inputs.V:
-            return self._device.write("WV {}".format(
+            return self.write("WV {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -3]
                                                if isinstance(x, IntEnum)])))
         else:
-            return self._device.write("WI {}".format(
+            return self.write("WI {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
@@ -491,31 +509,31 @@ class B1500():
                                                if isinstance(x, IntEnum)])))
 
     def pulse_sweep(self, channel_number, sweep_setup):
-        self._device.write(
+        self.write(
             "PT {},{}, {}".format(
                 sweep_setup.hold,
                 sweep_setup.width,
                 sweep_setup.period))
-        self._device.write("WM {}".format(sweep_setup.auto_abort))
+        self.write("WM {}".format(sweep_setup.auto_abort))
         if sweep_setup.input == Inputs.V:
-            return self._device.write("PWV {}".format(
+            return self.write("PWV {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -4] if x])))
         else:
-            return self._device.write("PWI {}".format(
+            return self.write("PWI {}".format(
                                           ",".join(
                                               ["{}".format(x)
                                                for x in sweep_setup
                                                [1: -4] if x])))
 
     def quasi_pulse(self, channel_number, quasi_setup):
-        self._device.write("BDT {},{}".format(
+        self.write("BDT {},{}".format(
             *["{}".format(x) for x in quasi_setup[-2:]]))
-        self._device.write("BDM {},{}".format(
+        self.write("BDM {},{}".format(
             *["{}".format(x) for x in quasi_setup[0:2]]))
-        self._device.write("BDV {},{}".format(
+        self.write("BDV {},{}".format(
             channel_number, *["{}".format(x) for x in quasi_setup[2:6]]))
 
 
@@ -536,44 +554,44 @@ class B1500():
             self.set_SPGU_loadimpedance(channel_number, spgu_setup.loadZ)  # SER
 
     def set_SPGU_apply(self, channel):
-        self._device.write("SPUPD {}".format(channel))
+        self.write("SPUPD {}".format(channel))
 
     def set_SPGU_pulse_timing(self, channel, source, delay, width, leading, trailing):
-        self._device.write("SPT {}".format(",".join(["{}".format(x)  for x in [channel, source, delay, width, leading, trailing]])))
+        self.write("SPT {}".format(",".join(["{}".format(x)  for x in [channel, source, delay, width, leading, trailing]])))
 
     def set_SPGU_pulse_levels(self, channel, level_sources, base, peak, pulse_src):
-        self._device.write("SPM {},{}".format(channel, level_sources))
-        self._device.write("SPV {},{},{},{}".format(channel, pulse_src, base, peak))
+        self.write("SPM {},{}".format(channel, level_sources))
+        self.write("SPV {},{},{},{}".format(channel, pulse_src, base, peak))
 
 
     def set_SPGU_loadimpedance(self, channel, loadZ):
-            self._device.write("SER {},{}".format(channel, loadZ))
+            self.write("SER {},{}".format(channel, loadZ))
 
     def set_SPGU_loadimpedance_auto(self, channel,update_impedance=1, delay=0, interval=5e-6,count=1 ):
-            self._device.write("CORRSER? {},{},{},{},{}".format(channel, update_impedance, delay, interval, count ))
+            self.write("CORRSER? {},{},{},{},{}".format(channel, update_impedance, delay, interval, count ))
             # execute a single measurement and set the output load
 
     def set_SPGU_pulse_period(self, pulse_period):
-        self._device.write("SPPER {}".format(pulse_period))
+        self.write("SPPER {}".format(pulse_period))
 
     def set_SPGU_pulse_switch(self, channel, switch_state, switch_normal, switch_delay, width):
-        self._device.write("ODSW {},{},{},{},{}".format(channel, switch_state, switch_normal, switch_delay, width ))
+        self.write("ODSW {},{},{},{},{}".format(channel, switch_state, switch_normal, switch_delay, width ))
 
     def set_SPGU_output_mode(self, output_mode, condition):
-        self._device.write("SPRM {}".format(",".join(["{}".format(x) for x in [output_mode, condition] if x])))
+        self.write("SPRM {}".format(",".join(["{}".format(x) for x in [output_mode, condition] if x])))
 
     def set_SPGU_wavemode(self, mode):
-        self._device.write("SIM {}".format(mode))
+        self.write("SIM {}".format(mode))
         pass
 
     def teardown_channel(self, channel):
         # force voltage to 0
-        self._device.write("DZ {}".format(channel.number))
+        self.write("DZ {}".format(channel.number))
         # disconnect channel
-        self._device.write("CL {}".format(channel.number))
+        self.write("CL {}".format(channel.number))
 
     def set_format(self, format, output_mode):
-        self._device.write("FMT {},{}".format(format, output_mode))
+        self.write("FMT {},{}".format(format, output_mode))
 
     def execute(self, test_tuple, force_wait=True, autoread=True):
         channels = test_tuple.channels
@@ -584,7 +602,7 @@ class B1500():
         exc = None
         data = None
         # look at first measurement only, since we can only measure one type of
-        # XE, SPGU, ... at once
+        # XE, SPGU, .. at once
         if any([c.measurement and c.measurement.mode in(
             MeasureModes.spot,
             MeasureModes.staircase_sweep,
@@ -599,13 +617,13 @@ class B1500():
             MeasureModes.quasi_pulsed_spot,
         ) for c in channels]):
             # triggered by XE=> NUB gets all the data
-            exc = self._device.query("XE")
+            exc = self.query("XE")
             if force_wait:
                 ready = 0
                 while ready == 0:
-                    ready = self._device.query("*OPC?")
+                    ready = self.query("*OPC?")
             if autoread:
-                data = self._device.query("NUB?")
+                data = self.query("NUB?")
         elif any([x.spgu for x in channels]):
             exc= self.start_SPGU()
         # elif any([isinstance(x.measurement, ) for x in channels]):
@@ -613,10 +631,10 @@ class B1500():
         return (exc,data)
 
     def start_SPGU(self):
-        self._device.write("SPR")
+        self.write("SPR")
         busy = 1
         while busy==1:
-            busy = self._device.query("SPST?")
+            busy = self.query("SPST?")
 
     def set_adc_global(
         self,
@@ -624,24 +642,24 @@ class B1500():
         highspeed_adc_number=None,
      highspeed_adc_mode=None):
         if adc_modes:
-            [self._device.write(
+            [self.write(
                  "AIT {}".format(",".join(["{}".format(x) for x in setting])))
              for setting in adc_modes]
         else:
             if highspeed_adc_number is None or highspeed_adc_mode is None:
                 raise ValueError(
                     "Either give complete adc mapping or specify highspeed ADC")
-            self._device.write(
+            self.write(
                 "AV {}, {}".format(
                     highspeed_adc_number,
                     highspeed_adc_mode))
 
     def pulsed_spot(self, channel_number, pulse_setup):
-        self._device.write(
+        self.write(
             "PT {}, {}, {}".format(pulse_setup.hold , pulse_setup.width, pulse_setup.period))
         if pulse_setup.input == Inputs.V:
-            self._device.write(
+            self.write(
                 "PV {},{},{},{},{}".format(channel_number, pulse_setup.input_range, pulse_setup.base, pulse_setup.pulse,pulse_setup.compliance))
         else:
-            self._device.write(
+            self.write(
                 "PI {},{},{},{},{}".format(channel_number, pulse_setup.input_range, pulse_setup.base, pulse_setup.pulse,pulse_setup.compliance))
