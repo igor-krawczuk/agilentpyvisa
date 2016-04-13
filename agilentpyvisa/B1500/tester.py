@@ -43,12 +43,14 @@ def availableInputRanges(model):
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
                      [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
     if model =="B1520A":  # MFCMU or CMU Multi frequency capacitance measurement unit
-        raise NotImplementedError("This device is not yet supported")
+        exception_logger.warn("This device is not yet supported")
+        return ()
     elif model =="B1525A":  # HVSPGU or SPGU High voltage semiconductor pulse generator unit
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in ()]+
                      [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in ()])
     else:
-        raise NotImplementedError("This device is not yet supported")
+        exception_logger.warn("We don't know this one, thus we don't support it")
+        return ()
 
 def availableMeasureRanges(model):
     raise NotImplementedError("This device is not yet supported")
@@ -60,6 +62,7 @@ class B1500():
         self.tests = OrderedDict()
         self.slots_installed={}
         self.sub_channels = []
+        self.separator = ','
 
     def init(self):
         self.reset()
@@ -93,9 +96,10 @@ class B1500():
         for i in range(10):
             try:
                 ret = self.check_settings(ParameterSettings.StatusSlot1+i)
-            except VisaIOError as e:
+                channels.extend([int(x.replace("CL","")) for x in ret.strip().split(";")])          
+            except visa.VisaIOError as e:
+                self.check_err()
                 exception_logger.debug("Caught exception\n {} \n as part of discovery prodecure, assuming no module in slot {}".format(e,i))
-            channels.extend([int(x.replace("CL","")) for x in ret.strip().split(";")])
         exception_logger.info("Found the folliwing channels\n{}".format(channels))
         return tuple(channels)
 
@@ -106,11 +110,14 @@ class B1500():
 
     def check_err(self):
         query = "ERRX?"
-        return self.query(query)
+        ret = self.query(query)
+        if ret[:2]!='+0':
+            exception_logger.warn(ret)
+        return ret
 
-    def query(self, msg, check_error=False):
+    def query(self, msg, delay=None,check_error=False):
         query_logger.info(msg)
-        retval = self._device.query(msg)
+        retval = self._device.query(msg, delay=delay)
         query_logger.info(str(retval)+"\n")
         if check_error:
             self.check_err()
@@ -240,6 +247,38 @@ to annotate error codes will come in a future release")
             dcforce=ground_setup)
         test = TestSetup(channels=[measure_channel, ground],)
         return self.run_test(test)
+    
+    def getmincover_V(self, slot, val):  
+        cov =[(k,v) for k,v in MeasureRanges_V.__members__.items() if v>=10*val
+          and MeasureRanges_I[k] in self.slots_installed[slot]["InputRanges"]]
+        if cov:
+            mincov =min(cov,key=lambda x:x.__getitem__(1))
+            return MeasureRanges_V[mincov[0]]
+        else:
+            return MeasureRanges_V.full_auto
+    
+    def get_mincover_I(self, slot, val):
+        def valid(y):
+            covered= MeasureRanges_I[y].value >0 and MeasureRanges_I[y].value <=20
+            return covered and MeasureRanges_I[y] in self.slots_installed[slot]["InputRanges"]
+        range_map={round(1e-12*pow(10,i),12):x for i,x in enumerate(
+                (y for y in MeasureRanges_I.__members__ if valid(y)))
+                }
+        range_map[2]=MeasureRanges_I.A2_limited
+        range_map[20]=MeasureRanges_I.A20_limited
+        range_map[40]=MeasureRanges_I.A40_limited
+        cov = [x for x in range_map.keys() if x >= val]
+        if cov:
+            mincov = min(cov)
+            return range_map[mincov]
+        else:
+            return MeasureRanges_I.full_auto
+
+    def _channel_to_slot(self, channel):
+        if not channel in self.sub_channels:
+            raise ValueError("Invalid Channel value")
+        return self.slots_installed[int(str(channel)[0])]
+        
 
     def DC_spot_I(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_I.full_auto, power_comp=None,
@@ -254,7 +293,8 @@ to annotate error codes will come in a future release")
         ground_setup = DCForce(
             input=Inputs.V,
             value=0,
-            compliance=compliance)
+            compliance=compliance,
+            input_range=InputRanges_V.full_auto)
         ground = Channel(
             number=ground_channel,
             dcforce=ground_setup)
@@ -274,10 +314,11 @@ to annotate error codes will come in a future release")
         ground_setup = DCForce(
             input=Inputs.V,
             value=0,
-            compliance=compliance)
+            compliance=compliance,
+            input_range=InputRanges_V.full_auto)
         ground = Channel(
             number=ground_channel,
-            dcforce=ground_setup)
+            dcforce=ground_setup,)
         test = TestSetup(channels=[measure_channel, ground],)
         self.run_test(test)
 
@@ -387,7 +428,15 @@ to annotate error codes will come in a future release")
         else:
             raise ValueError(
                 "At least one force should be in the channel, maybe you forgot to force ground to 0?")
-        return self.check_err()
+        errors = []
+        ret = self.check_err()
+        if ret[:2]=='+0':
+            return ret
+        else:
+            while ret[:2]!='+0':
+                errors.append(ret)
+                ret=self.check_err()
+            return errors
 
     def highspeed_spot_setup(self, channel_number, highspeed_setup):
         if highspeed_setup.target == Targets.C:
@@ -600,16 +649,14 @@ to annotate error codes will come in a future release")
             return self.write("WV {}".format(
                                           ",".join(
                                               ["{}".format(x)
-                                               for x in sweep_setup
-                                               [1: -3]
-                                               if isinstance(x, IntEnum)])))
+                                               for x in [channel_number]+list(sweep_setup[1: -3])
+                                               if x is not None])))
         else:
             return self.write("WI {}".format(
                                           ",".join(
                                               ["{}".format(x)
-                                               for x in sweep_setup
-                                               [1: -3]
-                                               if isinstance(x, IntEnum)])))
+                                               for x in [channel_number]+list(sweep_setup[1: -3])
+                                               if x is not None])))
 
     def pulse_sweep(self, channel_number, sweep_setup):
         self.write(
@@ -722,13 +769,31 @@ to annotate error codes will come in a future release")
             MeasureModes.quasi_pulsed_spot,
         ) for c in channels]):
             # triggered by XE=> NUB gets all the data
-            exc = self.query("XE")
+            exc = self.write("XE")
             if force_wait:
                 ready = 0
                 while ready == 0:
-                    ready = self.query("*OPC?")
+                    old_timeout = self._device.timeout
+                    self._device.timeout = None
+                    ready = int(self.query("*OPC?").strip())
+                    self._device.timeout = old_timeout
             if autoread:
-                data = self.query("NUB?")
+                data_size = int(self.query('NUB?').strip())
+                num_items = int(data_size/(1+len([x for x in test_tuple.channels if x.measurement])))
+                import re
+                result_tuple = None
+                fields = []
+                results = []                
+                for i in range(num_items):
+                    ret = self._device.read()
+                    if not results:                    
+                        fields = [x[:list(re.finditer('[\+\-]',x))[0].start()] for x in ret.strip().split(self.separator)]
+                        result_tuple =namedtuple('result',fields, rename=True)
+                    results.append(result_tuple(*[x.replace(f,'') for x,f in zip(
+                    ret.strip().split(self.separator),fields)]
+                    )
+                    )
+                data = results
         elif any([x.spgu for x in channels]):
             exc= self.start_SPGU()
         # elif any([isinstance(x.measurement, ) for x in channels]):

@@ -293,7 +293,7 @@ class SweepMode(IntEnum):
     linear_up = 1
     log_up = 2
     linear_up_down = 3
-    log_up_down = 3
+    log_up_down = 4
 
 
 class PulsePeriod(IntEnum):
