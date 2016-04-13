@@ -18,6 +18,9 @@ from .measurement import (
 from .setup import *
 from .helpers import minCover_I, minCover_V
 from logging import getLogger
+
+import numpy as np
+
 query_logger = getLogger(__name__+":query")
 write_logger = getLogger(__name__+":write")
 exception_logger = getLogger(__name__+":write")
@@ -53,7 +56,14 @@ def availableInputRanges(model):
         return ()
 
 def availableMeasureRanges(model):
-    raise NotImplementedError("This device is not yet supported")
+    raise NotImplementedError("This helper is not yet supported")
+
+
+def parse_response(response, response_format,reponse_output_mode, output=np.array)
+    if output is np.array:
+        # parse the output string into a multidimensional output array
+    else:
+        raise NotImplementedError("this parser output has not yet been implemented")
 
 class B1500():
     def __init__(self, tester):
@@ -62,7 +72,6 @@ class B1500():
         self.tests = OrderedDict()
         self.slots_installed={}
         self.sub_channels = []
-        self.separator = ','
 
     def init(self):
         self.reset()
@@ -377,7 +386,7 @@ to annotate error codes will come in a future release")
                 self.setup_channel(channel)
                 # resets timestamp, executes and optionally waits for answer,
                 # returns data with elapsed
-            ret = self.execute(test_tuple)
+            ret = self.measure(test_tuple)
         finally:
             for channel in test_tuple.channels:
                 self.teardown_channel(channel)
@@ -745,7 +754,7 @@ to annotate error codes will come in a future release")
     def set_format(self, format, output_mode):
         self.write("FMT {},{}".format(format, output_mode))
 
-    def execute(self, test_tuple, force_wait=True, autoread=True):
+    def measure(self, test_tuple, force_wait=True, autoread=True):
         channels = test_tuple.channels
         # need to figure out a proper interface on how to kick of and read out
         # measurement data
@@ -786,13 +795,7 @@ to annotate error codes will come in a future release")
                 results = []                
                 for i in range(num_items):
                     ret = self._device.read()
-                    if not results:                    
-                        fields = [x[:list(re.finditer('[\+\-]',x))[0].start()] for x in ret.strip().split(self.separator)]
-                        result_tuple =namedtuple('result',fields, rename=True)
-                    results.append(result_tuple(*[x.replace(f,'') for x,f in zip(
-                    ret.strip().split(self.separator),fields)]
-                    )
-                    )
+                    results.append(ret)
                 data = results
         elif any([x.spgu for x in channels]):
             exc= self.start_SPGU()
