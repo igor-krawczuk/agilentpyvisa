@@ -1,82 +1,70 @@
 from .enums import MeasureRanges_I
 from .enums import MeasureRanges_V
 
-def minCover_V(start,stop=None):
-    # since after .format() the values for the limited ranging are the same for input,
-    # output and measurement ranges we use the measurement Enum for all
-    largest = None
-    if stop is None:
-        largest = abs(start)
-    else:
-        largest=max(abs(start),abs(stop))
-    # TODO: might be nice to have binary tree here...just out of principle
-    if largest <=0.2:
-        return MeasureRanges_V.V0_2_limited
-    elif largest <=0.5:
-        return MeasureRanges_V.V0_5_limited
-    elif largest <=2:
-        return MeasureRanges_V.V2_limited
-    elif largest <=5:
-        return MeasureRanges_V.V5_limited
-    elif largest <=20:
-        return MeasureRanges_V.V20_limited
-    elif largest <=40:
-        return MeasureRanges_V.V40_limited
-    elif largest <=100:
-        return MeasureRanges_V.V100_limited
-    elif largest <=200:
-        return MeasureRanges_V.V200_limited
-    elif largest <=500:
-        return MeasureRanges_V.V500_limited
-    elif largest <=1500:
-        return MeasureRanges_V.V1500_limited
-    elif largest <=3000:
-        return MeasureRanges_V.V3000_limited
-    else:
-        return MeasureRanges_V.full_auto
 
-def minCover_I(start,stop=None):
-    # since after .format() the values for the limited ranging are the same for input,
-    # output and measurement ranges we use the measurement Enum for all
-    largest = None
-    if stop is None:
-        largest = abs(start)
+def availableInputRanges(model):
+    """ Returns tuples of the available OutputRanging used for input_range settings, based on the model. Based on Pages 4-22 and 4-16 of B1500 manual"""
+    if model =="B1510A":  # HPSMU High power source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,20,200,400,1000,2000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(11,21)))])
+    if model in ("B1511A","B1511B"):  # MPSMU Medium power source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
+    if model =="B1512A":  # HCSMU High current source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2,200,400,)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0,22]+list(range(15,21)))])
+    if model in ("B1513A", "B1513B"):  # HVSMU High voltage source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2000,5000,15000,30000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(11,20)))])
+    if model =="B1514A":  # MCSMU Medium current source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,2,200,400,)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(15,21)))])
+    if model =="B1517A":  # HRSMU High resolution source/monitor unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
+    if model =="B1520A":  # MFCMU or CMU Multi frequency capacitance measurement unit
+        exception_logger.warn("This device is not yet supported")
+        return ()
+    elif model =="B1525A":  # HVSPGU or SPGU High voltage semiconductor pulse generator unit
+        return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in ()]+
+                     [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in ()])
     else:
-        largest=max(abs(start),abs(stop))
-    # TODO: might be nice to have binary tree here...just out of principle
-    if largest <=1e-12:
-        return MeasureRanges_I.pA1_limited
-    elif largest <=1e-11:
-        return MeasureRanges_I.pA10_limited
-    elif largest <=1e-10:
-        return MeasureRanges_I.pA100_limited
-    elif largest <=1e-9:
-        return MeasureRanges_I.nA1_limited
-    elif largest <=1e-8:
-        return MeasureRanges_I.nA10_limited
-    elif largest <=1e-7:
-        return MeasureRanges_I.nA100_limited
-    elif largest <=1e-6:
-        return MeasureRanges_I.uA1_limited
-    elif largest <=1e-5:
-        return MeasureRanges_I.uA10_limited
-    elif largest <=1e-4:
-        return MeasureRanges_I.uA100_limited
-    elif largest <=1e-3:
-        return MeasureRanges_I.mA1_limited
-    elif largest <=1e-2:
-        return MeasureRanges_I.mA10_limited
-    elif largest <=1e-1:
-        return MeasureRanges_I.mA100_limited
-    elif largest <=1:
-        return MeasureRanges_I.A1_limited
-    elif largest <=2:
-        return MeasureRanges_I.A2_limited
-    elif largest <=2e2:
-        return MeasureRanges_I.A20_limited
-    elif largest <=4e2:
-        return MeasureRanges_I.pA40_limited
-    else:
-        return MeasureRanges_I.full_auto
+        raise NotImplementedError("We don't know this model {0}, thus we don't support it")
+
+def format_command(cmd, *args):
+    return "{} {}".format(cmd, ",".join(["{}".format(x) for x in args if x]))
 
 
+
+def availableMeasureRanges(model):
+    raise NotImplementedError("This helper is not yet supported")
+
+
+def isSweep(channels):
+    return any([c.measurement.mode in(
+                    MeasureModes.staircase_sweep,
+                    MeasureModes.multi_channel_sweep,
+                    MeasureModes.CV_sweep_dc_bias,
+                    MeasureModes.multichannel_pulsed_sweep,
+                    MeasureModes.pulsed_sweep,
+                    MeasureModes.staircase_sweep_pulsed_bias,
+                ) for c in channels])
+
+def getTerminator(format):
+    if "comma" in repr(format):
+        return ","
+    elif "crl" in repr(format):
+        return "\r\n"
+    else:
+        return "\n"
+def splitHeader(lines, terminator):
+    separator =","
+    return ([x.strip() for x in lines[0].split(separator) if x],lines[1:])
+
+def hasHeader(format):
+    if format in (Format.ascii12_with_header_comma, Format.ascii12_with_header_crl,
+                  Format.ascii13_with_header_comma_flex, Format.ascii13_with_header_comma,
+                  Format.ascii13_with_header_crl, Format.ascii13_with_header_crl_flex):
+        return True
+    else:
+        return False

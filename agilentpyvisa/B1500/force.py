@@ -1,6 +1,5 @@
 from collections import namedtuple
 from .enums import *
-from .helpers import (minCover_I, minCover_V)
 
 
 class DCForce(
@@ -12,16 +11,17 @@ class DCForce(
                    "compliance",
                    "polarity",
                    "compliance_range",  # if not set, uses minimum range that will cover. If set, limited auto never goes below
-                   "power_comp",
                 ])):
-    def __new__(cls, input, value, compliance,input_range=None, polarity=Polarity.like_input, compliance_range=None, power_comp=None):
-        if input_range is None:
-            if input==Inputs.I:
-                    input_range = minCover_I(value)
-            else:
-                    input_range = minCover_V(value)
+    """ Specifies a Channel setup, in which we force  a DC current or voltage.
+    input -  Inputs.I or Inputs.V
+    input_range - smallest InputRange_X covering the value, full_auto by default, needs to take into account module
+    value - the value we force, in A or V
+    compliance - maximum response Voltage or Current. Relatively slow, so use external safeguards of testing delicate units
+    polarity - whether the compliance limit has the same polarity as the forced value or not
+    compliance_range - smallest InputRange_X Covering the compliance"""
+    def __new__(cls, input,input_range, value, compliance, polarity=Polarity.like_input, compliance_range=None):
         return super(DCForce, cls).__new__(cls,input,input_range, value, compliance, polarity,
-                   compliance_range, power_comp)
+                   compliance_range)
 
 
 class StaircaseSweep(
@@ -38,13 +38,19 @@ class StaircaseSweep(
          "auto_abort",  # aborting on compliance reached, overflow on AD,Oscilation on any channel, yes no?
          "hold",     # 0 - 655.350 in s, 10 ms steps, wait before measuring starts
          "delay",   # 0 - 65.5350 in s,  0.1 ms steps, wait before measuring starts
-])):  #  WT
-    def __new__(cls, input, start, stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down, auto_abort=AutoAbort.enabled, power_comp=None, hold=0, delay=0):
-        if input_range is None:
-            if input == Inputs.I:
-                input_range = minCover_I(start, stop)
-            elif input == Inputs.V:
-                input_range = minCover_V(start, stop)
+])):
+    """ Specifies a Channel setup, in which we force  a DC current or voltage.
+    input -  Inputs.I or Inputs.V
+    sweepmode - linear/log, start-stop or start-stop-start
+    input_range - smallest InputRange_X covering the value, full_auto by default, needs to take into account module
+    start - the start value of the sweep
+    stop - the stop value of the sweep
+    step - steps of the sweep 1-100001
+    compliance - maximum response Voltage or Current. Relatively slow, so use external safeguards of testing delicate units
+    power_comp - ??? see 4-235 of manual
+    auto_abort - whether or not we should abort the test on any irregularities
+    """
+    def __new__(cls, input, input_range, start, stop, step, compliance,  sweepmode=SweepMode.linear_up_down, auto_abort=AutoAbort.enabled, power_comp=None, hold=0, delay=0):
         return super(StaircaseSweep, cls).__new__(cls,input, sweepmode, input_range, start, stop, step, compliance, power_comp, auto_abort, hold, delay)
 
 class SPGU(namedtuple("__SPGU",[
@@ -124,7 +130,6 @@ class SPGU(namedtuple("__SPGU",[
                                         pulse_trailing,
                                         )
 
-# Everything below still needs review
 class PulsedSpot(namedtuple("__PulsedSpot", [
          "input",  # V, I
          "input_range", # PV range
@@ -135,13 +140,7 @@ class PulsedSpot(namedtuple("__PulsedSpot", [
          "width",   # # pulse in seconds , see PT doc for ranges
          "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolutio
         ])):
-    def __new__(cls, input,  base, pulse,width,hold, compliance,input_range=None, period=PulsePeriod.minimum,):
-        if input_range is None:
-            if input == Inputs.I:
-                input_range = minCover_I(base, pulse)
-            elif input == Inputs.V:
-                input_range = minCover_V(base, pulse)
-
+    def __new__(cls, input,input_range,  base, pulse,width,hold, compliance, period=PulsePeriod.minimum,):
         return super(PulsedSpot, cls).__new__(cls, input,input_range,base, pulse,compliance,hold, width,  period)
 
 ### BELOW BE STUBS
@@ -164,13 +163,7 @@ class PulseSweep(
          "width",   # # pulse in seconds , see PT doc for ranges
          "period",  # 5-5000 in ms or one of PulsePeriod.{minimum,conservative} default PulsePeriod.minimum NOTE: gets multiplited by 10 to get resolution
          ])):  #  WT
-    def __new__(cls,input,base,start,stop,step,compliance, hold, width, period=PulsePeriod.minimum,input_range=None, auto_abort=AutoAbort.enabled,sweepmode=SweepMode.linear_up_down):
-        if input_range is None:
-            if input == Inputs.I:
-                input_range = minCover_I(start, stop)
-            elif input == Inputs.V:
-                input_range = minCover_V(start, stop)
-
+    def __new__(cls,input,input_range,base,start,stop,step,compliance, hold, width, period=PulsePeriod.minimum, auto_abort=AutoAbort.enabled,sweepmode=SweepMode.linear_up_down):
         return super(PulseSweep, cls).__new__(cls,input,sweepmode,input_range,base,start,stop,step,compliance, auto_abort, hold, width, period)
 
 

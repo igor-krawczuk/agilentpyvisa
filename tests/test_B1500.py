@@ -33,7 +33,7 @@ class DummyTester():
 def tester(monkeypatch):
     def mock(self,*args):
         self._device = DummyTester()
-        self.slots_installed = self._discover_slots()
+        self.slots_installed = self.__discover_slots()
         self.sub_channels = list(range(10))
     monkeypatch.setattr(B1500, "__init__", mock)
     b= B1500("test",)
