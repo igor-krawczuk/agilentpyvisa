@@ -747,6 +747,7 @@ class B1500():
                 slots[i+1]=None
         for k in slots.keys():
             if slots[k]:
+                exception_logger.info("Checking Ranges for Slot {}".format(k))
                 slots[k]["InputRanges"]=availableInputRanges(slots[k]["type"])
                 #slots[k]["MeasureRanges"]=availableMeasureRanges(slots[k]["type"])
         return slots
