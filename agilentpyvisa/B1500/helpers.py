@@ -64,8 +64,10 @@ def getTerminator(format):
         return "\r\n"
     else:
         return "\n"
+
 def splitHeader(lines, terminator):
     separator =","
+    lines = [x.strip() for x in lines.split(terminator) if x ]
     return ([x.strip() for x in lines[0].split(separator) if x],lines[1:])
 
 def hasHeader(format):
