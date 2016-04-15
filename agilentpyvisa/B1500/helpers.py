@@ -1,4 +1,4 @@
-from .enums import MeasureRanges_I
+from .enums import MeasureRanges_I, InputRanges_I, InputRanges_V
 from .enums import MeasureRanges_V
 
 
