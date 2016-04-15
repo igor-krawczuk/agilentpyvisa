@@ -29,7 +29,7 @@ exception_logger = getLogger(__name__+":ERRORS")
 class B1500():
     def __init__(self, tester, auto_init=True):
         self.__rm = visa.ResourceManager()
-        self._device = self. __rm.open_resource(tester)
+        self._device = self.__rm.open_resource(tester)
         self.tests = OrderedDict()
         self.slots_installed={}
         self.sub_channels = []
@@ -191,7 +191,7 @@ class B1500():
             ret = self.measure(test_tuple, force_wait,auto_read)
         finally:
             for channel in test_tuple.channels:
-                self.teardown_channel(channel)
+                self._teardown_channel(channel)
         return ret
 
     def _PulsedSpot(self, target, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
