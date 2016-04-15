@@ -1,5 +1,5 @@
 from .enums import MeasureRanges_I, InputRanges_I, InputRanges_V
-from .enums import MeasureRanges_V, MeasureModes
+from .enums import MeasureRanges_V, MeasureModes, Format
 from logging import getLogger
 exception_logger = getLogger(__name__+":ERRORS")
 
