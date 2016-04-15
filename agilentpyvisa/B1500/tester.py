@@ -473,16 +473,17 @@ class B1500():
                                            force_setup.value,
                                            force_setup.compliance,
                                            force_setup.polarity,
-                                           force_setup.compliance_range,
-                                           force_setup.power_comp))
+                                           force_setup.compliance_range,)
+
+                                )
         if force_setup.input == Inputs.I:
             return self.write(format_command("DI",channel_number,
                                            force_setup.input_range,
                                            force_setup.value,
                                            force_setup.compliance,
                                            force_setup.polarity,
-                                           force_setup.compliance_range,
-                                           force_setup.power_comp))
+                                           force_setup.compliance_range,)
+                              )
 
     def _setup_staircase_sweep(self, channel_number, sweep_setup):
         self.write(
