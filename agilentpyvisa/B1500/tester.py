@@ -42,7 +42,7 @@ class B1500():
         stores the available input and measure_ranges in the slots_installed dict,
         with the slot number as key. sub channels is a list containing
         all available channels"""
-        self.reset()
+        self._reset()
         self.slots_installed = self.__discover_slots()
         self.sub_channels = self.__discover_channels(self.slots_installed)
         self.check_err()
