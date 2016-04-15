@@ -23,7 +23,7 @@ from logging import getLogger
 
 query_logger = getLogger(__name__+":query")
 write_logger = getLogger(__name__+":write")
-exception_logger = getLogger(__name__+":write")
+exception_logger = getLogger(__name__+":ERRORS")
 
 
 class B1500():
@@ -45,7 +45,7 @@ class B1500():
         self._reset()
         self.slots_installed = self.__discover_slots()
         self.sub_channels = self.__discover_channels(self.slots_installed)
-        self.check_err()
+        self._check_err()
 
     def query(self, msg, delay=None,check_error=False):
         """ Writes the msg to the Tester, reads output buffer after delay and
@@ -54,7 +54,7 @@ class B1500():
         retval = self._device.query(msg, delay=delay)
         query_logger.info(str(retval)+"\n")
         if check_error:
-            exception_logger.info(self.check_err())
+            exception_logger.info(self._check_err())
         return retval
 
     def write(self, msg, check_error=False):
@@ -64,7 +64,7 @@ class B1500():
         retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
         if check_error:
-            exception_logger.info(self.check_err())
+            exception_logger.info(self._check_err())
         return retval
 
     def read(self, check_error=False):
@@ -73,7 +73,7 @@ class B1500():
         retval = self._device.read()
         query_logger.info(str(retval)+"\n")
         if check_error:
-            exception_logger.info(self.check_err())
+            exception_logger.info(self._check_err())
         return retval
 
     def measure(self, test_tuple, force_wait=False, autoread=False):
@@ -164,7 +164,7 @@ class B1500():
             measure_range)
 
     def DC_spot_V(self, input_channel, ground_channel, input_value,
-            compliance, input_range=InputRanges_V.full_auto, power_comp=None,
+            compliance, input_range = InputRanges_V.full_auto, power_comp=None,
             measure_range=MeasureRanges_I.full_auto):
         """ Performs a quick Spot Voltage measurement the specified channels """
         return self._DC_spot(Targets.V, input_channel, ground_channel, input_value,
@@ -408,13 +408,13 @@ class B1500():
             raise ValueError(
                 "At least one setup should be in the channel, maybe you forgot to force ground to 0?")
         errors = []
-        ret = self.check_err()
+        ret = self._check_err()
         if ret[:2]=='+0':
             return ret
         else:
             while ret[:2]!='+0':
                 errors.append(ret)
-                ret=self.check_err()
+                ret=self._check_err()
             return errors
 
 
@@ -758,7 +758,7 @@ class B1500():
                 ret = self.check_settings(ParameterSettings.StatusSlot1+i)
                 channels.extend([int(x.replace("CL","")) for x in ret.strip().split(";")])
             except visa.VisaIOError as e:
-                self.check_err()
+                self._check_err()
                 exception_logger.warn("Caught exception\n {} \n as part of discovery prodecure, assuming no module in slot {}".format(e,i))
         exception_logger.info("Found the folliwing channels\n{}".format(channels))
         return tuple(channels)

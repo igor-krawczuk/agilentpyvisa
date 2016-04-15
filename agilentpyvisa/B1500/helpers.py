@@ -26,7 +26,7 @@ def availableInputRanges(model):
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
                      [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
     if model =="B1520A":  # MFCMU or CMU Multi frequency capacitance measurement unit
-        exception_logger.warn("This device is not yet supported")
+        exception_logger.warn("This device is not yet supported: {}".format(model))
         return ()
     elif model =="B1525A":  # HVSPGU or SPGU High voltage semiconductor pulse generator unit
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in ()]+
