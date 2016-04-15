@@ -574,6 +574,7 @@ to annotate error codes will come in a future release")
         try:
             terminator = getTerminator(format)
             lines = [x for x in output.split(terminator) if x]
+            num_vals = len(lines[0].split(","))
             if hasHeader(format):
                 header = splitHeader(lines)
                 dtypes = {"names": header,"formats": [np.float]*len(header)}
@@ -581,10 +582,9 @@ to annotate error codes will come in a future release")
                 return np.fromiter(lines, dtype=dtypes)
             else:
                 lines= (tuple([x for x in line.split(",")] for line in lines))
-                return np.fromiter(lines,dtype=np.float)
+                return np.fromiter(lines,dtype=[np.float]*num_vals)
         except Exception as e:
             exception_logger.warn(e)
-            raise e
             return output
 
     def __getModule(self,model, slot):
