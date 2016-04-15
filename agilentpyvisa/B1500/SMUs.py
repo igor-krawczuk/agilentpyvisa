@@ -575,4 +575,5 @@ class MFCFMU(SMU):
         self.long_name = "Multiple frequency capacitive frequency measuring unit"
         self.models = ["B1520A"]
         # TODO special treatment
+        super().__init__(parent_device, slot)
 
