@@ -22,7 +22,7 @@ class DummyTester():
         elif any(("LRN" in x for x in args if type(x)is str)):
             return "CL1;"
         else:
-            return "None"
+            return "+0"
 
     def write(*args, **kwargs):
         print(*[x for x in args if isinstance(x, str)])
@@ -35,8 +35,9 @@ def tester(monkeypatch):
     def mock(self,*args,**kw):
         self._device = DummyTester()
         self.slots_installed = {i:HRSMU(self, i) for i in range(5)}
-        self._B1500__channels = [HRSMU(self, i) for i in range(5)]
-        self.sub_channels = list(range(5))
+        self.slots_installed[5]=HVSPGU(self,5)
+        self._B1500__channels = [self.slots_installed[i] for i in range(6)]
+        self.sub_channels = list(range(6))
     monkeypatch.setattr(B1500, "__init__", mock)
     b= B1500("test",auto_init=False)
     b.__chanels = [HRSMU(b, i) for i in range(5)]
@@ -47,6 +48,7 @@ def test_init(tester):
     print("DC_sweep_I")
     #tester.init()
 
+@pytest.mark.timeout(5)
 def test_DC_sweep_V(tester):
     print("DC_sweep_V")
     tester.DC_Sweep_V(1,2,0,5,0.5,1)
@@ -65,7 +67,7 @@ def test_DC_spot_I(tester):
 
 def test_pulsed_spot_V(tester):
     print("PulsedSpotV")
-    tester.pulsed_spot_V(input_channel=1,
+    tester.Pulsed_Spot_V(input_channel=1,
                          ground_channel=2,
                          base=1,
                          pulse=2,
@@ -74,7 +76,7 @@ def test_pulsed_spot_V(tester):
 
 def test_pulsed_spot_I(tester):
     print("PulsedSpotV")
-    tester.pulsed_spot_I(input_channel=1,
+    tester.Pulsed_Spot_I(input_channel=1,
                          ground_channel=2,
                          base=1,
                          pulse=2,
@@ -83,5 +85,5 @@ def test_pulsed_spot_I(tester):
 
 def test_SPGU(tester):
     print("SPGU_V")
-    tester.SPGU(1,0,1,1)
+    tester.SPGU(5,0,1,1)
 

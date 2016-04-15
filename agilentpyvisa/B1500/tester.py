@@ -101,7 +101,8 @@ class B1500():
             MeasureModes.staircase_sweep_pulsed_bias,
             MeasureModes.quasi_pulsed_spot,
         ) for c in channels])
-        SPGU =any([x.spgu for x in channels])
+        spgu_channels = [x.number for x in channels if x.spgu]
+        SPGU =any(spgu_channels)
         if [XE_measurement, SPGU,].count(True)>1:
             raise ValueError("Only one type of Measurement can be defined, please check your channel setups")
         # Measurements triggered by XE, read via NUB
@@ -118,7 +119,8 @@ class B1500():
                     data = self.__read_spot()
         # SPGU measurements
         elif SPGU:
-            exc= self._SPGU_start()
+            for x in spgu_channels:
+                self.__channels[x].start_pulses()
             if force_wait:
                 self._SPGU_wait()
         return (exc,self.__parse_output(test_tuple.format, data))
@@ -144,21 +146,29 @@ class B1500():
         stop, step, compliance, input_range, sweepmode,
         power_comp, measure_range)
 
+    def DC_Sweep_I(self, input_channel, ground_channel, start,
+        stop, step, compliance, input_range=None, sweepmode=SweepMode.linear_up_down,
+        power_comp=None, measure_range=MeasureRanges_I.full_auto):
+        """ Performs a quick Voltage staircase sweep measurement on the specified channels """
+        return self._DC_Sweep(Targets.I, input_channel, ground_channel, start,
+        stop, step, compliance, input_range, sweepmode,
+        power_comp, measure_range)
+
 
         """ Performs a quick Current staircase sweep measurement on the specified channels """
         return self._DC_Sweep(Targets.I, input_channel, ground_channel, start,
         stop, step, compliance, input_range, sweepmode,
         power_comp, measure_range)
 
-    def PulsedSpot_I(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
+    def Pulsed_Spot_I(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
         """ Performs a quick PulsedSpot Current measurement the specified channels """
-        return self._PulsedSpot(Targets.I, input_channel, ground_channel, base, pulse, width,compliance,measure_range, hold )
+        return self._Pulsed_Spot(Targets.I, input_channel, ground_channel, base, pulse, width,compliance,measure_range, hold )
 
-    def PulsedSpot_V(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
+    def Pulsed_Spot_V(self, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
         """ Performs a quick PulsedSpot Voltage measurement the specified channels """
-        return self._PulsedSpot(Targets.V, input_channel, ground_channel, base, pulse, width,compliance,measure_range, hold )
+        return self._Pulsed_Spot(Targets.V, input_channel, ground_channel, base, pulse, width,compliance,measure_range, hold )
 
-    def DC_spot_I(self, input_channel, ground_channel, input_value,
+    def DC_Spot_I(self, input_channel, ground_channel, input_value,
             compliance, input_range=InputRanges_I.full_auto, power_comp=None,
             measure_range=MeasureRanges_V.full_auto):
         """ Performs a quick Spot Current measurement the specified channels """
@@ -166,7 +176,7 @@ class B1500():
             compliance, input_range, power_comp,
             measure_range)
 
-    def DC_spot_V(self, input_channel, ground_channel, input_value,
+    def DC_Spot_V(self, input_channel, ground_channel, input_value,
             compliance, input_range = InputRanges_V.full_auto, power_comp=None,
             measure_range=MeasureRanges_I.full_auto):
         """ Performs a quick Spot Voltage measurement the specified channels """
@@ -197,7 +207,7 @@ class B1500():
                 self._teardown_channel(channel)
         return ret
 
-    def _PulsedSpot(self, target, input_channel, ground_channel, base, pulse, width,compliance,measure_range=MeasureRanges_V.full_auto, hold=0 ):
+    def _Pulsed_Spot(self, target, input_channel, ground_channel, base, pulse, width,compliance,input_range=None,measure_range=MeasureRanges_V.full_auto, hold=0 ):
         if target == Targets.V:
             input = Inputs.I
         else:
@@ -304,7 +314,7 @@ class B1500():
                                            value=input_value,
                                            compliance=compliance,
                                            input_range=input_range,
-                                           power_comp=power_comp),
+                                           ),
                                   measurement=measure)
         ground_setup = DCForce(
             input=Inputs.V,

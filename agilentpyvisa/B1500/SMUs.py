@@ -91,8 +91,8 @@ class StaircaseSweepUnit(SweepUnit):
         self.measurements[channel] = staircase_setup
         self.set_staircase_sweep_timing(staircase_setup.hold, staircase_setup.delay)
         self.set_sweep_auto_abort(staircase_setup.auto_abort)
-        if sweep_setup.input == Inputs.V:
-            return self.set_voltage_sweep(
+        if staircase_setup.input == Inputs.V:
+            return self.set_staircase_sweep_voltage(
                 channel,
                 staircase_setup.sweepmode,
                 staircase_setup.input_range,
@@ -102,7 +102,7 @@ class StaircaseSweepUnit(SweepUnit):
                 staircase_setup.compliance,
                 staircase_setup.power_comp)
         else:
-            return self.set_current_sweep(
+            return self.set_staircase_sweep_current(
                 channel,
                 staircase_setup.sweepmode,
                 staircase_setup.input_range,
@@ -164,7 +164,21 @@ class SingleMeasure(object):
 
 
 class DCForceUnit(object):
-
+    def force_voltage(self,
+            channel,
+            input_range,
+            value,
+            compliance,
+            polarity=None,
+            compliance_range=None):
+        return self.parent.write(format_command("DV",
+                                                channel,
+                                                input_range,
+                                                value,
+                                                compliance,
+                                                polarity,
+                                                compliance_range,)
+                                    )
     def setup_dc_force(self, channel, force_setup):
         """ Sets up the channel configuration for forcing a DC force or current."""
         if force_setup.input_range not in self.input_ranges:
@@ -195,42 +209,24 @@ class DCForceUnit(object):
         else:
             raise ValueError("Unkown Input {}".format(force_setup.input))
 
-        def force_voltage(
-                self,
+    def force_current(
+            self,
+            channel,
+            input_range,
+            value,
+            compliance,
+            polarity=None,
+            compliance_range=None):
+        return self.parent.write(
+            format_command(
+                "DI",
                 channel,
                 input_range,
                 value,
                 compliance,
-                polarity=None,
-                compliance_range=None):
-            return self.parent.write(format_command("DV",
-                                                    channel,
-                                                    input_range,
-                                                    value,
-                                                    compliance,
-                                                    polarity,
-                                                    compliance_range,)
-
-                                     )
-
-        def force_current(
-                self,
-                channel,
-                input_range,
-                value,
-                compliance,
-                polarity=None,
-                compliance_range=None):
-            return self.parent.write(
-                format_command(
-                    "DI",
-                    channel,
-                    force_setup.input_range,
-                    force_setup.value,
-                    force_setup.compliance,
-                    force_setup.polarity,
-                    force_setup.compliance_range,
-                    ))
+                polarity,
+                compliance_range,
+                ))
 
 
 class SpotUnit(SingleMeasure):
@@ -520,10 +516,10 @@ class PulsedSpotUnit(PulseUnit):
             format_command(
                 "PV",
                 channel,
-                pulse_setup.input_range,
-                pulse_setup.base,
-                pulse_setup.pulse,
-                pulse_setup.compliance))
+                input_range,
+                base,
+                pulse,
+                compliance))
 
     def set_pulse_spot_current(
         self,
@@ -536,10 +532,10 @@ class PulsedSpotUnit(PulseUnit):
             format_command(
                 "PI",
                 channel,
-                pulse_setup.input_range,
-                pulse_setup.base,
-                pulse_setup.pulse,
-                pulse_setup.compliance))
+                input_range,
+                base,
+                pulse,
+                compliance))
 
     def setup_pulsed_spot(self, channel, pulse_setup):
         if pulse_setup.input == Inputs.V:
@@ -690,7 +686,7 @@ class HVSPGU(SMU):
                 leading,
                 trailing))
 
-    def set_num_levels(self, channel, level_source):
+    def set_num_levels(self, channel, level_sources):
         self.parent.write(format_command("SPM", channel, level_sources))
     def set_pulse_levels(self, channel,  base, peak, pulse_src):
         self.parent.write(format_command("SPV", channel, pulse_src, base, peak))
@@ -743,7 +739,7 @@ class HVSPGU(SMU):
         """ Changes betwee pulsed and arbitrary linear wave mode"""
         self.parent.write("SIM {}".format(mode))
 
-    def start(self):
+    def start_pulses(self):
         """Starts SPGU output"""
         self.parent.write("SPR")
 
