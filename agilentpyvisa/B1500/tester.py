@@ -381,7 +381,7 @@ class B1500():
         else:
             return MeasureRanges_I.full_auto
 
-    def _setup_channel(self, channel):
+    def setup_channel(self, channel):
         """ Configures channel with any parameters which can be set before
         the acutal measurement or without any measurement at all"""
         self._open_channel(channel.number)
