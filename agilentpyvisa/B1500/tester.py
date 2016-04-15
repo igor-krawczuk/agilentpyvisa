@@ -743,8 +743,6 @@ class B1500():
         for i,x in enumerate(ret.strip().split(";")):
             if x!="0,0":
                 slots[i+1]={"type":x.split(",")[0],"revision":x.split(",")[1]}
-            else:
-                slots[i+1]=None
         for k in slots.keys():
             if slots[k]:
                 exception_logger.info("Checking Ranges for Slot {}".format(k))
