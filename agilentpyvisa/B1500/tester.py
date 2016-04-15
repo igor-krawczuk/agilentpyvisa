@@ -575,11 +575,13 @@ to annotate error codes will come in a future release")
             terminator = getTerminator(format)
             lines = [x for x in output.split(terminator) if x]
             if hasHeader(format):
-                header, lines = splitHeader(lines)
+                header = splitHeader(lines)
                 dtypes = {"names": header,"formats": [np.float]*len(header)}
-                return np.array(lines, dtype=dtypes)
+                lines= (tuple([x.replace(h,"") for x,h in zip(line.split(","), header)]) for line in lines)
+                return np.fromiter(lines, dtype=dtypes)
             else:
-                return np.array(lines,dtype=np.float)
+                lines= (tuple([x for x in line.split(",")] for line in lines))
+                return np.fromiter(lines,dtype=np.float)
         except Exception as e:
             exception_logger.warn(e)
             raise e

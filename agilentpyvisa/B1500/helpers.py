@@ -65,9 +65,17 @@ def getTerminator(format):
     else:
         return "\n"
 
-def splitHeader(lines ):
+def splitHeader(lines):
     separator =","
-    return ([x.strip() for x in lines[0].split(separator) if x],lines[1:])
+    fields = []
+    vals=[x.strip() for x in lines[0].split(separator) if x]
+    for v in vals:
+        if "+" in v:
+            fields.append(v.split("+")[0])
+        else:
+            fields.append(v.split("-")[0])
+    return fields
+
 
 def hasHeader(format):
     if format in (Format.ascii12_with_header_comma, Format.ascii12_with_header_crl,
