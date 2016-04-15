@@ -46,15 +46,15 @@ class SMU(object):
                 (k, v) for k, v in MeasureRanges_V.__members__.items()
                 if -1 * v >= 10 * val and
                 MeasureRanges_V[k] in self.input_ranges]
-            if cov:
-                if fixed:
-                    mincov = max(cov, key=lambda x: x.__getitem__(1))
-                    return range_map[maxcov]
-                else:
-                    mincov = min(cov, key=lambda x: x.__getitem__(1))
-                    return MeasureRanges_V[mincov[0]]
+        if cov:
+            if fixed:
+                mincov = max(cov, key=lambda x: x.__getitem__(1))
+                return range_map[maxcov]
             else:
-                return MeasureRanges_V.full_auto
+                mincov = min(cov, key=lambda x: x.__getitem__(1))
+                return MeasureRanges_V[mincov[0]]
+        else:
+            return MeasureRanges_V.full_auto
 
     def get_mincover_I(self,  val1, val2=None, fixed=False):
         """ This returns the smallest voltage range covering the largest given
@@ -63,7 +63,6 @@ class SMU(object):
         val = val1
         if val2:
             val = max(abs(val), abs(val2))
-
         def valid(y):
             covered = MeasureRanges_I[y].value <= 20
             if fixed:
