@@ -545,7 +545,7 @@ to annotate error codes will come in a future release")
         ret = self._check_modules()
         for i,x in enumerate(ret.strip().split(";")):
             if x!="0,0":
-                slots[i+1]=self.__getModule(x[0], i+1)
+                slots[i+1]=self.__getModule(x.split(",")[0], i+1)
         return slots
 
     def __read_spot(self):
