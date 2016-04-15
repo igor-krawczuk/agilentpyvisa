@@ -582,6 +582,7 @@ to annotate error codes will come in a future release")
                 return np.array(lines,dtype=np.float)
         except Exception as e:
             exception_logger.warn(e)
+            raise e
             return output
 
     def __getModule(self,model, slot):

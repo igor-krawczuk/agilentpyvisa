@@ -34,7 +34,7 @@ def availableInputRanges(model):
         raise NotImplementedError("We don't know this model {0}, thus we don't support it")
 
 def format_command(cmd, *args):
-    return "{} {}".format(cmd, ",".join(["{}".format(x) for x in args if x]))
+    return "{} {}".format(cmd, ",".join(["{}".format(x) for x in args if x is not None]))
 
 
 
