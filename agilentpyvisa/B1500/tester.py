@@ -577,7 +577,7 @@ to annotate error codes will come in a future release")
             if hasHeader(format):
                 header, lines = splitHeader(lines,terminator)
                 dtypes = {"names": header,"formats": [np.float]*len(header)}
-                return np.array(lines, dtype=dyptes)
+                return np.array(lines, dtype=dtypes)
             else:
                 return np.array(lines,dtype=np.float)
         except Exception as e:
