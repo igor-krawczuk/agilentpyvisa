@@ -49,7 +49,7 @@ def availableMeasureRanges(model):
 
 
 def isSweep(channels):
-    return any([c.measurement.mode in(
+    return channels and any([c.measurement.mode in(
                     MeasureModes.staircase_sweep,
                     MeasureModes.multi_channel_sweep,
                     MeasureModes.CV_sweep_dc_bias,
