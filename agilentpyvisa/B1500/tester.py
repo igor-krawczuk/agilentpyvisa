@@ -545,7 +545,7 @@ to annotate error codes will come in a future release")
         ret = self._check_modules()
         for i,x in enumerate(ret.strip().split(";")):
             if x!="0,0":
-                slots[i+1]=self.__getModule(x,i+1)
+                slots[i+1]=self.__getModule(x[0], i+1)
         return slots
 
     def __read_spot(self):
@@ -603,4 +603,4 @@ to annotate error codes will come in a future release")
         elif model =="B1525A":  # HVSPGU SPGU High voltage semiconductor pulse generator unit
             return HVSPGU(self, slot)
         else:
-            raise NotImplementedError("We don't know this model {0}, thus we don't support it")
+            exception_logger.warn("We don't know this model {0} in slot {1}, thus we don't support it".format(model, slot))
