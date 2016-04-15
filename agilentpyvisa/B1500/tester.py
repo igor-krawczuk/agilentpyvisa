@@ -754,7 +754,7 @@ class B1500():
         channels= []
         for i in slots.keys():
             try:
-                ret = self.check_settings(ParameterSettings.StatusSlot1+i)
+                ret = self.check_settings(i)
                 channels.extend([int(x.replace("CL","")) for x in ret.strip().split(";")])
             except visa.VisaIOError as e:
                 self._check_err()
