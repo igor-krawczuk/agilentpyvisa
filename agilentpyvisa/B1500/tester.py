@@ -47,8 +47,8 @@ class B1500():
         self._reset()
         self.slots_installed = self.__discover_slots()
         self.sub_channels = []
-        for s in self.slots_installed:
-            self.sub_channels.extend(s.channels)
+        for s,mod in self.slots_installed.items():
+            self.sub_channels.extend(mod.channels)
         self.__channels = {i:self.slots_installed[self.__channel_to_slot(i)] for i in self.sub_channels}
         self._check_err()
 
