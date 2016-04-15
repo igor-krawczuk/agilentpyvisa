@@ -351,7 +351,7 @@ class B1500():
         if val2:
             val= max(abs(val),abs(val2))
         cov =[(k,v) for k,v in MeasureRanges_V.__members__.items() if v>=10*val
-          and MeasureRanges_I[k] in self.slots_installed[slot]["InputRanges"]]
+          and MeasureRanges_V[k] in self.slots_installed[slot]["InputRanges"]]
         if cov:
             mincov =min(cov,key=lambda x:x.__getitem__(1))
             return MeasureRanges_V[mincov[0]]

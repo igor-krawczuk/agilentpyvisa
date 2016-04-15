@@ -3,7 +3,12 @@ from .enums import MeasureRanges_V
 from logging import getLogger
 exception_logger = getLogger(__name__+":ERRORS")
 
-
+class HPSMU():
+    longname = "High power source/monitor unit"
+    models = ["B1510A"]
+    input_ranges = []
+    MeasureRanges = []
+#   and so on... TODO complete this and shift it over
 
 def availableInputRanges(model):
     """ Returns tuples of the available OutputRanging used for input_range settings, based on the model. Based on Pages 4-22 and 4-16 of B1500 manual"""
