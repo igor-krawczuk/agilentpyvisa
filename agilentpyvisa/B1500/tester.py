@@ -440,7 +440,7 @@ to annotate error codes will come in a future release")
             MeasureModes.staircase_sweep_pulsed_bias,
             MeasureModes.quasi_pulsed_spot,
         ]:
-            self.__channels[channel]._setup_xe_measure(channel, measurement)
+            self.__channels[channel]._setup_xe_measure(measurement,channel=channel )
         elif measurement.mode in [
             MeasureModes.spot_C,
             MeasureModes.pulsed_spot_C,

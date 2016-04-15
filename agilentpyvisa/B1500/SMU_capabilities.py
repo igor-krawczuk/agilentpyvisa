@@ -115,18 +115,18 @@ class StaircaseSweepUnit(SweepUnit):
 
 class SingleMeasure(object):
 
-    def set_measure_mode(mode,):
+    def set_measure_mode(self,mode,channel):
         """ Defines which measurement to perform on the channel. Not used for all measurements,
         check enums.py  or MeasureModes for a full list of measurements"""
         self.parent.write(
             "MM {}".format(",".join(["{}".format(x) for x in [mode, channel]])))
 
-    def set_measure_side(channel, side):
+    def set_measure_side(self,channel, side):
         """ Specify whether the sensor should read on the current, voltage,
         compliance or force side. See MeasureSides"""
         self.parent.write("CMM {},{}".format(channel, side))
 
-    def set_measure_range(channel, target, range):
+    def set_measure_range(self,channel, target, range):
         """ Sets measure ranges out of available Ranges. The less range changes,
         the faster the measurement. Thus the spees increases from full_auto to
         limited to fixed. See MeasureRanges_X for availble values"""
@@ -150,14 +150,11 @@ class SingleMeasure(object):
                         self.slot, self.channels))
             else:
                 channel = channels[0]
-                self.set_measure_mode(config.mode, channel)
-                if config.mode not in set(
-                        [MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
-                    self.set_measure_side(channel, config.side)
-                    if config.mode not in set(
-                            [MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
-                        self.set_measure_range(
-                            channel, config.target, config.range)
+        self.set_measure_mode(config.mode, channel)
+        if config.mode not in tuple([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+            self.set_measure_side(channel, config.side)
+        if config.mode not in tuple([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
+            self.set_measure_range(channel, config.target, config.range)
 
 
 class DCForceUnit(object):

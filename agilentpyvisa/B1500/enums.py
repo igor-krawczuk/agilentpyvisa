@@ -338,3 +338,21 @@ class ADCTypes(IntEnum):
 class ADCMode(IntEnum):
     auto = 0
     manual = 1
+
+
+class SMU_SPGU_state(IntEnum):
+    """ The 16440A has a mechanical relay, as well as a semiconductor relay in
+    the SPGU path. For more information, see page 2-66 of the B1500A manual,
+    and the documentation for ERSSP"""
+    open_relay = 0
+    connect_relay_SMU = 1
+    connect_relay_SPGU = 2
+    connect_relay_SPGU_open = 3
+
+class SMU_SPGU_port(IntEnum):
+    """ TODO experiment and figure out what this means"""
+    Module_1_Output_1 = 0
+    Module_1_Output_2 = 1
+    Module_2_Output_1 = 2
+    Module_2_Output_2 = 3
+
