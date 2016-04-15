@@ -437,7 +437,7 @@ class B1500():
             MeasureModes.staircase_sweep_pulsed_bias,
             MeasureModes.quasi_pulsed_spot,
         ]:
-            self.measure_single_setup(channel, measurement)
+            self._measure_single_setup(channel, measurement)
         elif measurement.mode in [
             MeasureModes.spot_C,
             MeasureModes.pulsed_spot_C,
