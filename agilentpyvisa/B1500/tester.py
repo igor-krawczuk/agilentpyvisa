@@ -575,7 +575,7 @@ to annotate error codes will come in a future release")
             terminator = getTerminator(format)
             lines = [x for x in output.split(terminator) if x]
             if hasHeader(format):
-                header, lines = splitHeader(lines,terminator)
+                header, lines = splitHeader(lines)
                 dtypes = {"names": header,"formats": [np.float]*len(header)}
                 return np.array(lines, dtype=dtypes)
             else:
