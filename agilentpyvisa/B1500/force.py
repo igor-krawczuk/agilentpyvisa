@@ -19,7 +19,7 @@ class DCForce(
     compliance - maximum response Voltage or Current. Relatively slow, so use external safeguards of testing delicate units
     polarity - whether the compliance limit has the same polarity as the forced value or not
     compliance_range - smallest InputRange_X Covering the compliance"""
-    def __new__(cls, input,input_range, value, compliance, polarity=Polarity.like_input, compliance_range=None):
+    def __new__(cls, input,value, compliance,input_range=InputRanges_I.full_auto,  polarity=Polarity.like_input, compliance_range=None):
         return super(DCForce, cls).__new__(cls,input,input_range, value, compliance, polarity,
                    compliance_range)
 

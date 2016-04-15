@@ -1,14 +1,8 @@
 from .enums import MeasureRanges_I, InputRanges_I, InputRanges_V
-from .enums import MeasureRanges_V
+from .enums import MeasureRanges_V, MeasureModes
 from logging import getLogger
 exception_logger = getLogger(__name__+":ERRORS")
 
-class HPSMU():
-    longname = "High power source/monitor unit"
-    models = ["B1510A"]
-    input_ranges = []
-    MeasureRanges = []
-#   and so on... TODO complete this and shift it over
 
 def availableInputRanges(model):
     """ Returns tuples of the available OutputRanging used for input_range settings, based on the model. Based on Pages 4-22 and 4-16 of B1500 manual"""
@@ -30,10 +24,10 @@ def availableInputRanges(model):
     if model =="B1517A":  # HRSMU High resolution source/monitor unit
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in (0,5,50,200,400,1000)]+
                      [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in tuple([0]+list(range(8,20)))])
-    if model =="B1520A":  # MFCMU or CMU Multi frequency capacitance measurement unit
+    if model =="B1520A":  # MFCMU  CMU Multi frequency capacitance measurement unit
         exception_logger.warn("This device is not yet supported: {}".format(model))
         return ()
-    elif model =="B1525A":  # HVSPGU or SPGU High voltage semiconductor pulse generator unit
+    elif model =="B1525A":  # HVSPGU SPGU High voltage semiconductor pulse generator unit
         return tuple([InputRanges_V[x] for  x in InputRanges_V.__members__ if InputRanges_V[x].value in ()]+
                      [InputRanges_I[x] for  x in InputRanges_I.__members__ if InputRanges_I[x].value in ()])
     else:
@@ -56,7 +50,12 @@ def isSweep(channels):
                     MeasureModes.multichannel_pulsed_sweep,
                     MeasureModes.pulsed_sweep,
                     MeasureModes.staircase_sweep_pulsed_bias,
-                ) for c in channels])
+                ) for c in channels if c.measurement])
+def isSpot(channels):
+    return channels and any([c.measurement.mode in(
+                    MeasureModes.spot,
+                    MeasureModes.pulsed_spot,
+                ) for c in channels if c.measurement])
 
 def getTerminator(format):
     if "comma" in repr(format):

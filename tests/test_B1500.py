@@ -3,9 +3,10 @@ from agilentpyvisa.B1500 import *
 import agilentpyvisa
 import visa
 import ipdb
+import types
 
-import logging
-logging.basicConfig(level=logging.INFO)
+#import logging
+#logging.basicConfig(level=logging.INFO)
 
 class DummyTester():
 
@@ -19,7 +20,7 @@ class DummyTester():
         if any(("UNT" in x for x in args if type(x)is str)):
             return ";".join(["B1517A,0"]*5)
         elif any(("LRN" in x for x in args if type(x)is str)):
-            return "CL101"
+            return "CL1;"
         else:
             return "None"
 
@@ -31,34 +32,36 @@ class DummyTester():
 
 @pytest.fixture(scope="function")
 def tester(monkeypatch):
-    def mock(self,*args):
+    def mock(self,*args,**kw):
         self._device = DummyTester()
-        self.slots_installed = self.__discover_slots()
-        self.sub_channels = list(range(10))
+        self.slots_installed = {i:HRSMU(self, i) for i in range(5)}
+        self._B1500__channels = [HRSMU(self, i) for i in range(5)]
+        self.sub_channels = list(range(5))
     monkeypatch.setattr(B1500, "__init__", mock)
-    b= B1500("test",)
+    b= B1500("test",auto_init=False)
+    b.__chanels = [HRSMU(b, i) for i in range(5)]
     return b
 
 
 def test_init(tester):
     print("DC_sweep_I")
-    tester.init()
+    #tester.init()
 
 def test_DC_sweep_V(tester):
     print("DC_sweep_V")
-    tester.DC_sweep_V(1,2,0,5,0.5,1)
+    tester.DC_Sweep_V(1,2,0,5,0.5,1)
 
-def test_DC_sweep_I(tester):
-    print("DC_spot_I")
-    tester.DC_sweep_I(1,2,0,5,0.5,1)
+def test_DC_Sweep_I(tester):
+    print("DC_sweep_I")
+    tester.DC_Sweep_I(1,2,0,5,0.5,1)
 
 def test_DC_spot_V(tester):
     print("DC_spot_V")
-    tester.DC_spot_V(1,2,5,1)
+    tester.DC_Spot_V(1,2,5,1)
 
 def test_DC_spot_I(tester):
     print("DC_spot_I")
-    tester.DC_spot_I(1,2,5,1)
+    tester.DC_Spot_I(1,2,5,1)
 
 def test_pulsed_spot_V(tester):
     print("PulsedSpotV")
@@ -78,7 +81,7 @@ def test_pulsed_spot_I(tester):
                          width=1e-3,
                          compliance=1)
 
-def test_SPGU_V(tester):
+def test_SPGU(tester):
     print("SPGU_V")
-    tester.SPGU_V(1,0,1,1)
+    tester.SPGU(1,0,1,1)
 

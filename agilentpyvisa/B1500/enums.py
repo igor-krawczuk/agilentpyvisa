@@ -1,9 +1,8 @@
 from enum import IntEnum, Enum
-
 class DIO_ControlModes(IntEnum):
     "Used  to select a digital IO Controller with set/check DIO"""
     GeneralPurpose = 0
-    SMU_PGU_16440A = 1
+    SMU_PGU_Selector_16440A = 1
     B1500A_A04 = 1
     N1258A = 2
     N1259A = 2
