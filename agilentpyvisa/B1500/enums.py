@@ -1,4 +1,12 @@
 from enum import IntEnum, Enum
+class SearchOutput(IntEnum):
+    search = 0
+    sense_and_search = 1
+
+class SyncPolarity(IntEnum):
+    negative = 0
+    positive = 1
+
 class DIO_ControlModes(IntEnum):
     "Used  to select a digital IO Controller with set/check DIO"""
     GeneralPurpose = 0
@@ -356,3 +364,10 @@ class SMU_SPGU_port(IntEnum):
     Module_2_Output_1 = 2
     Module_2_Output_2 = 3
 
+class SearchControlMode(IntEnum):
+    normal = 0
+    cautious = 1
+
+class SearchModes(IntEnum):
+    limit = 0
+    count = 1

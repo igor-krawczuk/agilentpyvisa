@@ -5,6 +5,7 @@ from .enums import MeasureSides,MeasureRanges_I,MeasureRanges_V, MeasureModes
 class MeasureStaircaseSweep(namedtuple("__MeasureStaircaseSweep",["target","range","side","mode"])):
     def __new__(cls,target,range=MeasureRanges_I.full_auto,side=MeasureSides.compliance_side):
         # full_auto the same in I and V (=0)
+        """ Specifies a StaircaseSweep measurement, see page 2-8 of the manual"""
         mode=MeasureModes.staircase_sweep
         return super(MeasureStaircaseSweep, cls).__new__(cls,target,range,side,mode)
 
@@ -20,88 +21,24 @@ class MeasurePulsedSpot(namedtuple("__MeasurePulsedSpot",["target","range","side
         mode=MeasureModes.pulsed_spot
         return super(MeasurePulsedSpot, cls).__new__(cls, target, range, side, mode)
 
-class MeasureSPGU(namedtuple("__MeasureSPGU",[])):
-    def __new__(cls, type):
-        return super(SPGU, cls).__new__(cls, )
-    pass
-
-# EVERYTHING BELOW THIS TEXT IS STUBS ONLY AND NOT READY TO USE
-class HighSpeedSpot(namedtuple("__HighSpeedSpot",[
-    "target",
-    "IMP",
-    "FC",
-    "vrange",
-    "irange",
-    "Rrange",
-    "highspeed_mode"
-                                                  ,])):
-    pass
-
-class Search(
-    namedtuple(
-        "__Search",
-        [
-            "type",
-            "target",
-            "auto_abort",
-            "output_mode",
-            "timing",
-            "monitor",
-            "search_source",
-             "synchronous_source"])):  # binary/Linear, voltage/current, LSM,LSVM,LSTM,LGI,LSV,LSSV
-    def __new__(cls, type,
-            target,
-            auto_abort,
-            output_mode,
-            timing,
-            monitor,
-            search_source,
-             synchronous_source):
-        return super(Search, cls).__new__(cls, type,
-            target,
-            auto_abort,
-            output_mode,
-            timing,
-            monitor,
-            search_source,
-             synchronous_source)
-
-class QuasiPulse(namedtuple("__QuasiPulse", [
-    "settling_detection_intervall", # BDM
-    "measure_target", # BDM
-    "input_range",  # BDV
-    "start",  #BDV
-    "stop", # BDV
-    "compliance",# BDV
-    "hold",     # BDT, 0 - 655.350 in s, 10 ms steps, wait before measuring starts
-    "delay",   # BDT, 0 - 65.5350 in s,  0.1 ms steps, wait before measuring starts
-])):  # BDM,BDT, BDV
-    def __new__(cls, settling_detection_interval,measure_target,start,stop,compliance,hold=0, delay=0,input_range=None):
-        if input_range is None:
-            input_range = minCover_V(start,stop)
-        return super(QuasiPulse, cls).__new__(cls, settling_detection_interval,measure_target,input_range,start,stop,compliance,hold, delay)
-
-
-class QuasiStatic(namedtuple("__QuasiStatic", ["type", ])):  # pulsed, sweep,
-    def __new__(cls, type):
-        return super(QuasiStatic, cls).__new__(cls, type)
-
-
-
-
-class Sampling(namedtuple("__Sampling",["range","base","bias","compliance","hold_bias","interval","number","hold_base"])):
-    pass
-
-
-
-
-
-
-
-class MultiChannel(
-    namedtuple(
-        "__MultiChannel", [
-            "mode", ])):  # pulsed, sweep,
-    def __new__(cls, type):
-        return super(MultiChannelSetup, cls).__new__(cls, type)
+class MeasureBinarySearch(namedtuple("__MeasureBinarySearch",["mode",
+                                                              "target",
+                                                              "output_mode",
+                                                              "control_mode",
+                                                              "auto_abort",
+                                                              "hold",
+                                                              "delay",
+                                                              "searchmode",
+                                                              "condition",
+                                                              "measure_range",
+                                                              "target_value",
+                                                              ])):
+    def __new__(cls,target,target_value,condition,output_mode=SearchOutput.sense_and_search, control_mode=SearchControlMode.normal,auto_abort=AutoAbort.enabled,hold=0,delay=0,searchmode=SearchModes.limit,measure_range=MeasureRanges_I.full_auto,):
+        # full_auto the same in I and V (=0)
+        mode=MeasureModes.binary_search
+        if hold > 655.35 or hold <0:
+            raise ValueError("hold must be between 0 and 655.35 s")
+        if delay > 65.535 or delay <0:
+            raise ValueError("delay must be between 0 and 65.535 s")
+        return super(MeasureBinarySearch, cls).__new__(cls, mode,target,output_mode,control_mode,auto_abort,hold,delay,searchmode,condition,measure_range,target_value)
 

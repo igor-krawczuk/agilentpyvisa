@@ -15,11 +15,12 @@ from .measurement import (
                           MeasureSpot,
                           MeasureStaircaseSweep,
                           MeasurePulsedSpot,
-                          MeasureSPGU)
+                          )
 from .setup import *
 from .helpers import *
 from logging import getLogger
 from .SMUs import *
+from .dummy import DummyTester
 
 
 query_logger = getLogger(__name__+":query")
@@ -29,12 +30,24 @@ exception_logger = getLogger(__name__+":ERRORS")
 
 class B1500():
     def __init__(self, tester, auto_init=True):
-        self.__rm = visa.ResourceManager()
-        self._device = self.__rm.open_resource(tester)
+        try:
+            self.__rm = visa.ResourceManager()
+            self._device = self.__rm.open_resource(tester)
+        except OSError as e:
+            exception_logger.warn("Could not find VISA driver, setting _device to std_out")
+            self._device = DummyTester()
         self.tests = OrderedDict()
         self.slots_installed={}
+        self.__DIO_control_mode={}
         self.sub_channels = []
         self.__channels={}
+        self.__recording = False
+        self.programs={}
+        self.last_program=None
+        self.__no_store=("*RST","DIAG?","*TST?","CA","AB","RCV","WZ?","ST","END",
+                         "SCR","VAR","LST?","CORRSER?","SER?","SIM?","SPM?",
+                         "SPPER?","ERMOD?","ERSSP?","ERRX?","ERR?","EMG?",
+                         "*LRN?","*OPC?","UNT?","WNU?","*SRE?","*STB?",)
         if auto_init:
             self.init()
 
@@ -56,17 +69,24 @@ class B1500():
         """ Writes the msg to the Tester, reads output buffer after delay and
         logs both to the query logger.Optionally checks for errors afterwards"""
         query_logger.info(msg)
-        retval = self._device.query(msg, delay=delay)
-        query_logger.info(str(retval)+"\n")
-        if check_error:
-            exception_logger.info(self._check_err())
+        retval=[]
+        if self.__recording and any([x in msg for x in self.__no_store]):
+            self.programs[self.last_program]["config_nostore"].append(msg)
+        else:
+            retval = self._device.query(msg, delay=delay)
+            query_logger.info(str(retval)+"\n")
+            if check_error:
+                exception_logger.info(self._check_err())
         return retval
 
     def write(self, msg, check_error=False):
         """ Writes the msg to the Tester and logs it in the write
         logger.Optionally checks for errors afterwards"""
         write_logger.info(msg)
-        retval = self._device.write(msg)
+        if self.__recording and any([x in msg for x in self.__no_store]):
+            self.programs[self.last_program]["config_nostore"].append(msg)
+        else:
+            retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
         if check_error:
             exception_logger.info(self._check_err())
@@ -103,7 +123,8 @@ class B1500():
         ) for c in channels])
         spgu_channels = [x.number for x in channels if x.spgu]
         SPGU =any(spgu_channels)
-        if [XE_measurement, SPGU,].count(True)>1:
+        search = any([x.binarysearch or x.linearsearch for x in channels])
+        if [XE_measurement, SPGU,search].count(True)>1:
             raise ValueError("Only one type of Measurement can be defined, please check your channel setups")
         # Measurements triggered by XE, read via NUB
         if XE_measurement:
@@ -123,6 +144,8 @@ class B1500():
                 self.__channels[x].start_pulses()
             if force_wait:
                 self._SPGU_wait()
+        elif search:
+            self.write("XE")
         return (exc,self.__parse_output(test_tuple.format, data))
 
     def check_settings(self, parameter):
@@ -364,7 +387,22 @@ class B1500():
 to annotate error codes will come in a future release")
         return ret
 
-    def _set_DIO_control_mode(self, mode, state):
+    def set_SMUPGU_selector1(self, state, port=SMU_SPGU_port.Module_1_Output_1):
+        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==True:
+            ret= self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A, DIO_ControlState.enabled)
+            self.__DIO_control_mode[DIO_ControlModes.SMU_PGU_Selector_16440A]=True
+        ret = self._set_SMU_SPGU_selector(port,state)
+        return ret
+
+    def set_SMUPGU_selector2(self, state, port=SMU_SPGU_port.Module_2_Output_1):
+        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==True:
+            ret= self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A, DIO_ControlState.enabled)
+            self.__DIO_control_mode[DIO_ControlModes.SMU_PGU_Selector_16440A]=True
+        ret = self._set_SMU_SPGU_selector(port,state)
+        return ret
+
+
+    def __set_DIO_control_mode(self, mode, state):
         """ Sets the control mode of the tester. In order to control the SMU/PGU
         Controller via ERSSP or the set_SMU_SPGU_selector first this function needs to
         be executed with mode=DIO_ControlModes.SMU_PGU_Selector_16440A, state=DIO_ControlState.enabled
@@ -372,12 +410,12 @@ to annotate error codes will come in a future release")
         ret = self.write("ERMOD {},{}".format(mode, state))
         return ret
     def _set_SMU_SPGU_selector(self, port, status):
-        """ After being enabled as explained in _set_DIO_control_mode,
+        """ After being enabled as explained in __set_DIO_control_mode,
         applys SMU_SPGU_state to the SMU_SPGU_port (see enums.py)"""
         return self.write("ERSSP {},{}".format(port, status))
 
     def _check_SMU_SPGU_selector(self, port):
-        """ After being enabled as explained in _set_DIO_control_mode,
+        """ After being enabled as explained in __set_DIO_control_mode,
         queries the specified SMU_SPGU_port for its state"""
         return self.query("ERSSP? {}".format(port))
 
@@ -398,8 +436,8 @@ to annotate error codes will come in a future release")
             unit.setup_dc_force(channel.number, channel.dcforce)
         elif channel.staircase_sweep is not None:
             unit.setup_staircase_sweep(channel.number, channel.staircase_sweep)
-        elif channel.pulse_sweep is not None:
-            unit.setup_pulse_sweep(channel.number, channel.pulse_sweep)
+        elif channel.pulsed_sweep is not None:
+            unit.setup_pulsed_sweep(channel.number, channel.pulsed_sweep)
         elif channel.pulsed_spot is not None:
             unit.setup_pulsed_spot(channel.number, channel.pulsed_spot)
         elif channel.quasipulse is not None:
@@ -452,8 +490,10 @@ to annotate error codes will come in a future release")
             raise NotImplemented("CapacitanceMeasurement not yet implemented")
         elif measurement.mode == MeasureModes.quasi_static_cv:
             raise NotImplemented("QuasistatiCV measurement not yet implemented")
-        elif measurement.mode in [MeasureModes.linear_search, MeasureModes.binary_search]:
-            raise NotImplemented("Search  measurement not yet implemented")
+        elif measurement.mode ==MeasureModes.binary_search:
+            self.__channels[channel].setup_binarysearch_measure(measurement,channel=channel )
+        elif measurement.mode==MeasureModes.linear_search:
+            self.__channels[channel].setup_linearsearch_measure(measurement,channel=channel )
         else:
             raise ValueError("Unknown Measuremode")
 
@@ -493,6 +533,38 @@ to annotate error codes will come in a future release")
             return self.query("UNT? 1")
         else:
             return self.query("UNT? 0")
+    def record_program(self,program_name):
+        if self.__recording:
+            raise ValueError("Already recording")
+        id = self.programs[self.last_program]["id"]+1 if self.last_program else 1
+        self.write("ST {}".format(id))
+        self.__recording = True
+        self.programs[program_name]={}
+        self.programs[program_name]["index"]= id
+        self.programs[program_name]["steps"]=[]
+        self.programs[program_name]["config_nostore"]=[]
+        self.last_program=program_name
+    def stop_recording(self):
+        self.__recording = False
+        exception_logger.info("Recorded program {} with index {} and the following steps".format(self.last_program,self.programs[self.last_program]["index"]))
+        exception_logger.info("\n".join(self.programs[self.last_program]["steps"]))
+        exception_logger.info("as well as the following captured steps(check these manually before exeting the program, or execute the self.nostore_execute if you are sure all them are idempotent")
+        exception_logger.info("\n".join(self.programs[self.last_program]["config_nostore"]))
+
+    def run_prog(self, program_name):
+        if self.__recording:
+            raise ValueError("still recording")
+        self.write("DO {}".format(self.programs[program_name]["index"]))
+
+    def run_progs_by_ids(self, *ids):
+        if self.__recording:
+            raise ValueError("still recording")
+        if any([not i in [x["index"] for x in self.programs]]):
+            raise ValueError("One of your specified ids not in the buffer")
+        if len(ids)>8:
+            raise ValueError("You can only specify 8 programs at once")
+        self.write(format_command("DO",*ids))
+
 
     def _reset(self):
         """ Reset Tester"""

@@ -191,7 +191,7 @@ class SMU(object):
                     channel,
                     state))  # connects or disconnects 1MOhm series
 
-class PulsedSweep(PulseUnit, SweepUnit):
+class PulsedSweepUnit(PulseUnit, SweepUnit):
 
     def set_pulse_sweep_voltage(
         self,
@@ -206,7 +206,7 @@ class PulsedSweep(PulseUnit, SweepUnit):
       power_comp=None):
         return self.parent.write(format_command("PWV",
                                                 channel,
-                                                mode,
+                                                sweepmode,
                                                 input_range,
                                                 base,
                                                 start,
@@ -229,7 +229,7 @@ class PulsedSweep(PulseUnit, SweepUnit):
                 power_comp=None):
             return self.parent.write(format_command("PWI",
                                                     channel,
-                                                    mode,
+                                                    sweepmode,
                                                     input_range,
                                                     base,
                                                     start,
@@ -240,12 +240,13 @@ class PulsedSweep(PulseUnit, SweepUnit):
                                                     )
                                      )
 
-    def setup_pulse_sweep(self, channel, sweep_setup):
+    def setup_pulsed_sweep(self, channel, sweep_setup):
         self.set_pulse_timing(
-            sweep_setup.hold,
-            sweep_setup.width,
-            sweep_setup.period)
+            sweep_setup.pulse_hold,
+            sweep_setup.pulse_width,
+            sweep_setup.pulse_period)
         self.set_sweep_auto_abort(sweep_setup.auto_abort)
+        self.set_sweep_timing(sweep_setup.sweep_hold,sweep_setup.sweep_delay)
         if sweep_setup.input == Inputs.V:
             self.set_pulse_sweep_voltage(
                 channel,
@@ -256,7 +257,6 @@ class PulsedSweep(PulseUnit, SweepUnit):
                 sweep_setup.stop,
                 sweep_setup.step,
                 sweep_setup.compliance,
-                sweep_setup.power_comp
             )
         else:
             self.set_pulse_sweep_current(
@@ -281,15 +281,16 @@ class PulsedSpotUnit(PulseUnit):
         channel,
         input_range,
         base,
-        pulse,
+        peak,
      compliance):
+        """ Voltage pulse configuration"""
         return self.parent.write(
             format_command(
                 "PV",
                 channel,
                 input_range,
                 base,
-                pulse,
+                peak,
                 compliance))
 
     def set_pulse_spot_current(
@@ -299,6 +300,7 @@ class PulsedSpotUnit(PulseUnit):
         base,
         pulse,
      compliance):
+        """ Current pulse configuration"""
         return self.parent.write(
             format_command(
                 "PI",
@@ -309,24 +311,26 @@ class PulsedSpotUnit(PulseUnit):
                 compliance))
 
     def setup_pulsed_spot(self, channel, pulse_setup):
+        """Sets up timing and amplitude of the pulsed spot"""
+        self.set_pulse_timing(pulse_setup.hold,pulse_setup.width,pulse_setup.period)
         if pulse_setup.input == Inputs.V:
             return self.set_pulse_spot_voltage(
                 channel,
                 pulse_setup.input_range,
                 pulse_setup.base,
-                pulse_setup.pulse,
+                pulse_setup.peak,
                 pulse_setup.compliance)
         else:
             return self.set_pulse_spot_current(
                 channel,
                 pulse_setup.input_range,
                 pulse_setup.base,
-                pulse_setup.pulse,
+                pulse_setup.peak,
                 pulse_setup.compliance)
 
 
 # bundling up all the different Measuring Types possible with almost every SMU
-class GeneralSMU(SMU,DCForceUnit, PulsedSpotUnit, SingleMeasure, StaircaseSweepUnit):# SpotUnit, PulsedSweep, StaircaseSweep):
+class GeneralSMU(SMU,DCForceUnit,SpotUnit, PulsedSpotUnit, SingleMeasure, StaircaseSweepUnit,PulsedSweepUnit,BinarySearchUnit):
     pass
 class HPSMU(GeneralSMU):
 
@@ -346,6 +350,17 @@ class HPSMU(GeneralSMU):
                                    list(range(11,21))+list(range(-11,-21,-1))
                                     )
         super().__init__(parent_device, slot)
+    def check_search_target(self, target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=1:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=200:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
 
 
 class MPSMU(GeneralSMU):
@@ -364,6 +379,18 @@ class MPSMU(GeneralSMU):
                                      )
         super().__init__(parent_device, slot)
 
+    def check_search_target(self, target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=0.1:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=100:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+
 
 class HCSMU(GeneralSMU):
 
@@ -380,6 +407,17 @@ class HCSMU(GeneralSMU):
                                     list(range(15,20))+list(range(-15,-20))+[22,-22]
                                     )
         super().__init__(parent_device, slot)
+    def check_search_target(self,target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=1:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=40:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
 
 
 class HVSMU(GeneralSMU):
@@ -397,6 +435,17 @@ class HVSMU(GeneralSMU):
                                     list(range(11,19))+list(range(-11,-19,-1))
                                     )
         super().__init__(parent_device, slot)
+    def check_search_target(self,target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=0.008:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=3000:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
 
 class MCSMU(GeneralSMU):
 
@@ -414,6 +463,18 @@ class MCSMU(GeneralSMU):
                                     )
 
         super().__init__(parent_device, slot)
+
+    def check_search_target(self,target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=0.1:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=30:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
 
 class HRSMU(GeneralSMU):
 
@@ -433,6 +494,17 @@ class HRSMU(GeneralSMU):
                                    list(range(8,20))+list(range(-8,-20,-1))
                                     )
         super().__init__(parent_device, slot)
+    def check_search_target(self,target_type, target):
+        if target_type==Targets.I:
+            if abs(target) >= 0 and abs(target) <=0.1:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
+        else:
+            if abs(target) >= 0 and abs(target) <=100:
+                return True
+            else:
+                raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
 
 
 class HVSPGU(SMU):
@@ -459,24 +531,38 @@ class HVSPGU(SMU):
         width,
         leading,
      trailing):
-        self.parent.write(
-            format_command(
-                "SPT",
-                channel,
-                source,
-                delay,
-                width,
-                leading,
-                trailing))
+        """ Sets up the timing parameters for the given signal and channel.
+        Only Pulse parameters, the switch parameters(if enabled) are set separately,
+        (self.set_pulse_switch) as is the period (self.set_pulse_period)"""
+        return [self.parent.write(
+            format_command("SPT",channel,s,d,w,l,t)) for
+            s,d,w,l,t in zip(source,delay,width,leading,trailing)]
 
     def set_num_levels(self, channel, level_sources):
+        """ Selects number of levels and signals used for the levels . Available:
+            - 0 DC mode
+            - 2 level pulse, using Signal 1 only
+            - 2 level pulse, using Signal 2 only
+            - 3 level pulse, using Signal 1 and 2
+        If you set 3 level pulses, you need to explicitly set the timing and voltage seutps as len-2 tuples or lists
+        """
         self.parent.write(format_command("SPM", channel, level_sources))
+
     def set_pulse_levels(self, channel,  base, peak, pulse_src):
-        self.parent.write(format_command("SPV", channel, pulse_src, base, peak))
+        """ Sets the base and peak value for the pulse source in the specified channel"""
+        if any([abs(v) > self.maxV for v in max(base+peak)]):
+            raise ValueError("SPGU output must be in range -40V to 40V")
+        return [self.parent.write(format_command("SPV", channel, src, b, p)) for src,b,p in zip(pulse_src,base,peak)]
 
     def set_loadimpedance(self, channel, loadZ):
-        self.parent.write(format_command("SER", channel, loadZ))
+        """ Sets the load impedance to a value between 0.1 Ohm to 1MOhm, default 50 O
+        Setting the output resistance correctly ensures that the output voltage
+        is as close as possible to the SPV value. Execute set_loadimpedance_auto to
+        automatically set an estimated impedance"""
+        if not(loadZ==SPGUOutputImpedance.full_auto or (loadZ<1e6 and loadZ>0.1)):
+            raise ValueError("loadZ must be SPGUOutputImpedance.full_auto or between 0.1 - 1e6 Ohm")
         self.load_impedance[channel] = loadZ
+        return self.parent.write(format_command("SER", channel, loadZ))
 
     def set_loadimpedance_auto(
         self,
@@ -485,7 +571,11 @@ class HVSPGU(SMU):
         delay=0,
         interval=5e-6,
      count=1):
-        self.parent.write(
+        """ Executes a voltage measurement on the SPGU terminal and sets the
+        load impedance to the calulated voltage.
+        """
+        self.load_impedance[channel] = "autoset"
+        return self.parent.write(
             format_command(
                 "CORRSER?",
                 channel,
@@ -493,11 +583,12 @@ class HVSPGU(SMU):
                 delay,
                 interval,
                 count))
-        self.load_impedance[channel] = "autoset"
-        # execute a single measurement and set the output load
+
 
     def set_pulse_period(self, pulse_period):
-        self.parent.write(format_command("SPPER", pulse_period))
+        """ Sets the pulse period to all installed SPGU modules
+        """
+        return self.parent.write(format_command("SPPER", pulse_period))
 
     def set_pulse_switch(
         self,
@@ -506,7 +597,12 @@ class HVSPGU(SMU):
         switch_normal,
         switch_delay,
      width):
-        self.parent.write(
+        """ Enables or disables the pulse switch (which I presume is a
+        semiconductor switch) and sets the state, delay and "normal" state of the switch
+        (normally open/closed). the manual states it is "more durable than mechanical relays and
+        better suited for frequent switching applications", so if you want to use high
+        frequency patterns, enable this. By default enabled"""
+        return self.parent.write(
             format_command(
                 "ODSW",
                 channel,
@@ -516,23 +612,33 @@ class HVSPGU(SMU):
                 width))
 
     def set_output_mode(self, output_mode, condition):
-        self.parent.write(format_command("SPRM", output_mode, condition))
+        """ Selects between different completion conditions:
+        1. Free run (run until SPP is executed, ignores condition)
+        2. Count, run until *condition* pulses have been send
+        3. Duration, run until *conditions* seconds have elapsed
+        """
+        return self.parent.write(format_command("SPRM", output_mode, condition))
 
     def set_wavemode(self, mode):
         """ Changes betwee pulsed and arbitrary linear wave mode"""
-        self.parent.write("SIM {}".format(mode))
+        return self.parent.write("SIM {}".format(mode))
 
     def start_pulses(self):
         """Starts SPGU output"""
-        self.parent.write("SPR")
+        return self.parent.write("SPR")
+    def stop_pulses(self):
+        """Stops SPGU output"""
+        return self.parent.write("SPP")
 
-    def wait(self):
+    def wait_spgu(self):
         """ Queries SPGU and blocks until it has finished pulsing"""
         self.busy = 1
         while busy == 1:
             self.busy = self.parent.query("SPST?")
+        return busy
 
     def setup_spgu(self, channel, spgu_setup):
+        """ Creates the specified spgu setup for the given channel. For more detials about the setup look at the SPGU IntEnum"""
         self.set_wavemode(spgu_setup.wavemode)
         self.set_output_mode(spgu_setup.output_mode, spgu_setup.condition)
         self.set_pulse_switch(
@@ -543,18 +649,18 @@ class HVSPGU(SMU):
             spgu_setup.switch_width)  # ODSW
         self.set_pulse_period(spgu_setup.pulse_period)  # SPPER
         if spgu_setup.wavemode == SPGUModes.Pulse:
-            self.set_num_levels(channel, spgu_setup.pulse_level_sources)
+            self.set_num_levels(channel, spgu_setup.levels)
             self.set_pulse_levels(
                 channel,
                 spgu_setup.pulse_base,
                 spgu_setup.pulse_peak,
-                spgu_setup.pulse_src)  # SPM, SPV, check if pulse_src==source
+                spgu_setup.sources)  # SPM, SPV, check if pulse_src==source
         else:
             raise NotImplementedError(
                 "Arbitrary Linear Wavemode will be added in a later release")
         self.set_pulse_timing(
             channel,
-            spgu_setup.timing_source,
+            spgu_setup.sources,
             spgu_setup.pulse_delay,
             spgu_setup.pulse_width,
             spgu_setup.pulse_leading,

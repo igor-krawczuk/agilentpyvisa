@@ -53,7 +53,7 @@ class Channel(
                      "channel_adc",  # AAD, default ADCTypes.highspeed
                    "dcforce",
                     "staircase_sweep",
-                   "pulse_sweep",
+                   "pulsed_sweep",
                     "pulsed_spot",
                     "quasipulse",
                    "spgu",
@@ -61,12 +61,12 @@ class Channel(
                    "measurement"
                    ])):
     def __new__(cls,number,  series_resistance=SeriesResistance.disabled, channel_adc=ADCTypes.highspeed,
-                   dcforce=None, staircase_sweep=None, pulse_sweep=None, pulsed_spot=None, spgu=None, quasipulse=None,
+                   dcforce=None, staircase_sweep=None, pulsed_sweep=None, pulsed_spot=None, spgu=None, quasipulse=None,
                    highspeed_spot=None, measurement=None ):
         # add default values
         # adc_type = AAD
         #
-        if [x is not None for x in [dcforce, staircase_sweep, pulse_sweep,  quasipulse, pulsed_spot, spgu, highspeed_spot]].count(True)>1:
+        if [x is not None for x in [dcforce, staircase_sweep, pulsed_sweep,  quasipulse, pulsed_spot, spgu, highspeed_spot]].count(True)>1:
             raise ValueError("At most one force setup can be use per channel")
         return super(Channel, cls).__new__(cls, number, series_resistance, channel_adc,
                    dcforce, staircase_sweep, pulse_sweep,  pulsed_spot, quasipulse, spgu, highspeed_spot, measurement )

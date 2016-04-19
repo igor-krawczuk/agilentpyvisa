@@ -4,24 +4,13 @@ exception_logger = getLogger(__name__+":ERRORS")
 from .enums import *
 
 class SweepUnit(object):
+    """ Common functionality of pulsed sweep and staircase weep"""
 
     def set_sweep_auto_abort(self, auto_abort):
         exception_logger.info("Setting GLOBAL parameter SweepAbort")
         return self.parent.write("WM {}".format(auto_abort))
 
-class PulseUnit(object):
-
-    def set_pulse_timing(self, hold, width, period):
-        self.parent.write(
-            format_command("PT",
-                           hold,
-                           width,
-                           period))
-
-
-class StaircaseSweepUnit(SweepUnit):
-
-    def set_staircase_sweep_timing(
+    def set_sweep_timing(
         self,
         hold,
         delay,
@@ -35,6 +24,21 @@ class StaircaseSweepUnit(SweepUnit):
                 delay,
                 step_delay,
                 output_trigger_delay))
+
+
+class PulseUnit(object):
+    """ Shared Functionality of PulsedSpot and PulsedSweep"""
+
+    def set_pulse_timing(self, hold, width, period):
+        """ Sets up the pulse timing parameters for SMU pulsed sweep and spot"""
+        self.parent.write(
+            format_command("PT",
+                           hold,
+                           width,
+                           period))
+
+
+class StaircaseSweepUnit(SweepUnit):
 
     def set_staircase_sweep_current(
         self,
@@ -86,7 +90,7 @@ class StaircaseSweepUnit(SweepUnit):
                 "Trying to set nonexistent channel {} in SMU on slot {}".format(
                     channel, self.slot))
         self.measurements[channel] = staircase_setup
-        self.set_staircase_sweep_timing(staircase_setup.hold, staircase_setup.delay)
+        self.set_sweep_timing(staircase_setup.hold, staircase_setup.delay)
         self.set_sweep_auto_abort(staircase_setup.auto_abort)
         if staircase_setup.input == Inputs.V:
             return self.set_staircase_sweep_voltage(
@@ -149,7 +153,7 @@ class SingleMeasure(object):
                     "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                         self.slot, self.channels))
             else:
-                channel = channels[0]
+                channel = self.channels[0]
         self.set_measure_mode(config.mode, channel)
         if config.mode not in tuple([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
             self.set_measure_side(channel, config.side)
@@ -227,3 +231,68 @@ class SpotUnit(SingleMeasure):
 
     def setup_spot_measure(self, measure_setup, channel=None):
         self._setup_xe_measure(measure_setup, channel)
+
+class BinarySearchUnit(object):
+    def setup_binarysearch_measure(self,measure_setup,channel=None):
+        if not channel:
+            if len(self.channels) > 1:
+                raise ValueError(
+                    "Multiple channels founds on Slot {}, please specifiy one of {}".format(
+                        self.slot, self.channels))
+            else:
+                channel = self.channels[0]
+        self.set_search_measure(measure_setup.mode)
+        self.set_binary_search_output_mode(measure_setup.output_mode)
+        self.set_binarysearch_controlmode(measure_setup.control_mode, measure_setup.auto_abort)
+        self.set_binarysearch_timing(measure_setup.hold,measure_setup.delay)
+        if measure_setup.target==Targets.I:
+            self.set_binarysearch_condition_current(channel,measure_setup.searchmode,measure_setup.condition, measure_setup.measure_range, measure_setup.target_value)
+        else:
+            self.set_binarysearch_condition_voltage(channel,measure_setup.searchmode,measure_setup.condition, measure_setup.measure_range, measure_setup.target_value)
+
+    def setup_binarysearch_force(self, search_setup, channel=None):
+        if not channel:
+            if len(self.channels) > 1:
+                raise ValueError(
+                    "Multiple channels founds on Slot {}, please specifiy one of {}".format(
+                        self.slot, self.channels))
+            else:
+                channel = self.channels[0]
+        if search_setup.input==Inputs.I:
+            self.set_binarysearch_current(channel,search_setup.start, search_setup.stop, search_setup.input_range, search_setup.compliance)
+            self.set_binarysearch_synchrous_current(channel,search_setup.sync_polarity, search_setup.sync_offset, search_setup.sync_compliance)
+        else:
+            self.set_binarysearch_voltage(channel,search_setup.start, search_setup.stop, search_setup.input_range, search_setup.compliance)
+            self.set_binarysearch_synchrous_voltage(channel,search_setup.sync_polarity, search_setup.sync_offset, search_setup.sync_compliance)
+
+    def set_binarysearch_controlmode(self, controlmode, auto_abort):
+        self.parent.write(format_command("BSM",controlmode,auto_abort))
+
+    def set_binarysearch_condition_current(self,channel,searchmode,condition,measure_range,target_value):
+        self.check_search_target(Targets.I,target_value)
+        self.parent.write(format_command("BGI",channel, searchmode, condition,measure_range,target_value))
+
+    def set_binarysearch_condition_voltage(self,channel,searchmode,condition,measure_range,target_value):
+        self.check_search_target(Targets.V,target_value)
+        self.parent.write(format_command("BGV",channel, searchmode, condition,measure_range,target_value))
+
+    def set_binarysearch_synchrous_voltage(self, channel,polarity,offset,compliance):
+        self.parent.write(format_command("BSSV",channel,polarity,offset,compliance))
+
+    def set_binarysearch_synchrous_current(self, channel,polarity,offset,compliance):
+        self.parent.write(format_command("BSSI",channek,polarity,offset,compliance))
+
+    def set_binarysearch_voltage(self, channel,start,stop,input_range,compliance):
+        self.parent.write(format_command("BSV",channel,input_range,start,stop,compliance))
+
+    def set_binarysearch_current(self, channel,start,stop,input_range,compliance):
+        self.parent.write(format_command("BSI",channel,input_range,start,stop,compliance))
+
+    def set_binarysearch_timing(self, hold, delay):
+        self.parent.write(format_command("BST",hold, delay))
+
+    def set_binary_search_output_mode(self, output):
+        self.parent.write("BSVM {}".format(output))
+
+    def set_search_measure(self, mode):
+        self.parent.write("MM {}".format(mode))
