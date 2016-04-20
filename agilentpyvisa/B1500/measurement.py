@@ -26,6 +26,7 @@ class MeasureBinarySearch(namedtuple("__MeasureBinarySearch",["mode",
                                                               "output_mode",
                                                               "control_mode",
                                                               "auto_abort",
+                                                              "post",
                                                               "hold",
                                                               "delay",
                                                               "searchmode",
@@ -33,12 +34,12 @@ class MeasureBinarySearch(namedtuple("__MeasureBinarySearch",["mode",
                                                               "measure_range",
                                                               "target_value",
                                                               ])):
-    def __new__(cls,target,target_value,condition,output_mode=SearchOutput.sense_and_search, control_mode=SearchControlMode.normal,auto_abort=AutoAbort.enabled,hold=0,delay=0,searchmode=SearchModes.limit,measure_range=MeasureRanges_I.full_auto,):
+    def __new__(cls,target,target_value,condition,post=SearchPost.start,output_mode=SearchOutput.sense_and_search, control_mode=SearchControlMode.normal,auto_abort=AutoAbort.enabled,hold=0,delay=0,searchmode=SearchModes.limit,measure_range=MeasureRanges_I.full_auto,):
         # full_auto the same in I and V (=0)
         mode=MeasureModes.binary_search
         if hold > 655.35 or hold <0:
             raise ValueError("hold must be between 0 and 655.35 s")
         if delay > 65.535 or delay <0:
             raise ValueError("delay must be between 0 and 65.535 s")
-        return super(MeasureBinarySearch, cls).__new__(cls, mode,target,output_mode,control_mode,auto_abort,hold,delay,searchmode,condition,measure_range,target_value)
+        return super(MeasureBinarySearch, cls).__new__(cls, mode,target,output_mode,control_mode,auto_abort,post,hold,delay,searchmode,condition,measure_range,target_value)
 

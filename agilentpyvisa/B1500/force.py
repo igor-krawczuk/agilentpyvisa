@@ -230,8 +230,8 @@ class BinarySearchSetup(
         "start",
         "stop",
         "compliance",
-        "sync_polarity",
-        "sync_offset",
+        "sync_polarity", # cannot be set together with start/stop values, needs to be set on different channels
+        "sync_offset",   # when defined the synchronous source will force start/stop/latest+offset (as defined by the measurement-post parameter) and keep the last value after the search
         "sync_compliance",
          ])):  #  WT
     """ Specifies the setup for a binary search. Paremeters are
@@ -247,11 +247,13 @@ class BinarySearchSetup(
     max 655.35, resolution 0.01 s
     - delay: settling time at every step between forcing a value and starting
     the step measurement. max 65.535, resolution 0.0001 s
-    -
+
     """
-    def __new__(cls,input,start,stop,compliance,sync_compliance=None,sync_offset=0,sync_polarity=SyncPolarity.positive, input_range=InputRanges_I.full_auto):
-        if not sync_compliance:
-            sync__compliance=compliance
+    def __new__(cls,input,start,stop,compliance,sync_compliance=None,sync_offset=0,sync_polarity=None, input_range=InputRanges_I.full_auto):
+        if start and sync_polarity:
+            raise ValueError("Source channel and synchronouschannel have to be the different")
+        if not sync_compliance and sync_polarity:
+            sync_compliance = compliance
         if start==stop:
             raise ValueError("start must be != stop")
         if compliance == 0:

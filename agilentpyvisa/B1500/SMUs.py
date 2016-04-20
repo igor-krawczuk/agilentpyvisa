@@ -349,7 +349,20 @@ class HPSMU(GeneralSMU):
                                     2000, -20, -200,-400,-1000,-2000]+
                                    list(range(11,21))+list(range(-11,-21,-1))
                                     )
+        self._search_max_voltage=100
+        self._search_max_current=0.1
+        self._search_compliance_current={20:1,
+                                         40:500e-3,
+                                         100:125-3,
+                                         200:50-3,
+                                         }
+        self._search_compliance_voltage={50e-3:200,
+                                         100-3:100,
+                                         500e-3:40,
+                                         1:20,
+                                         }
         super().__init__(parent_device, slot)
+
     def check_search_target(self, target_type, target):
         if target_type==Targets.I:
             if abs(target) >= 0 and abs(target) <=1:
@@ -377,6 +390,16 @@ class MPSMU(GeneralSMU):
                                     -5, -20,-50, -200,-400,-1000,]+
                                    list(range(8,20))+list(range(-8,-20,-1))
                                      )
+        self._search_max_voltage=100
+        self._search_max_current=0.1
+        self._search_compliance_current={20:0.1,
+                                         40:50e-3,
+                                         100:20e-3,
+                                         }
+        self._search_compliance_voltage={20e-3:100,
+                                         50e-3:40,
+                                        100e-3:20,
+                                         }
         super().__init__(parent_device, slot)
 
     def check_search_target(self, target_type, target):
@@ -494,6 +517,16 @@ class HRSMU(GeneralSMU):
                                    list(range(8,20))+list(range(-8,-20,-1))
                                     )
         super().__init__(parent_device, slot)
+        self._search_max_voltage=100
+        self._search_max_current=0.1
+        self._search_compliance_current={20:0.1,
+                                         40:50e-3,
+                                         100:20e-3,
+                                         }
+        self._search_compliance_voltage={20e-3:100,
+                                         50e-3:40,
+                                        100e-3:20,
+                                         }
     def check_search_target(self,target_type, target):
         if target_type==Targets.I:
             if abs(target) >= 0 and abs(target) <=0.1:

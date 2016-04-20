@@ -562,7 +562,7 @@ to annotate error codes will come in a future release")
             MeasureModes.pulsed_spot_C,
             MeasureModes.pulsed_sweep_CV,
             MeasureModes.sweep_Cf,
-            MeasureModes.sweep_CV,
+            MeasureModes.sweep_CV_ac_level,
             MeasureModes.sampling_Ct,
         ]:
             raise NotImplemented("CapacitanceMeasurement not yet implemented")
