@@ -1,4 +1,10 @@
 from enum import IntEnum, Enum
+
+class SearchPost(IntEnum):
+    start = 0
+    stop = 1
+    last_output = 2
+
 class SearchOutput(IntEnum):
     search = 0
     sense_and_search = 1
