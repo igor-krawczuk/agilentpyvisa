@@ -81,6 +81,7 @@ class B1500():
             query_logger.info(str(retval)+"\n")
             err =self._check_err()
             if err[:2]!="+0":
+                exception_logger.warn(err)
                 exception_logger.warn(msg)
         return retval
 
@@ -96,6 +97,7 @@ class B1500():
         if check_error or self.default_check_err:
             err =self._check_err()
             if err[:2]!="+0":
+                exception_logger.warn(err)
                 exception_logger.warn(msg)
         return retval
 
