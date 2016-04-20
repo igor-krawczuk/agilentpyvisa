@@ -86,7 +86,7 @@ class SPGU(namedtuple("__SPGU",[
                 wavemode=SPGUModes.Pulse,  # Pulses or Arbitrary Linear Wavve
                 output_mode=SPGUOutputModes.count, ## Free run, number of pulses or duration
                 condition=1,  ## Number of seconds to run or pulses to send
-                loadZ=SPGUOutputImpedance.full_auto,  # that to set it automatically with CORRSER, otherwise 0.1 to 1M
+                loadZ=0.1,  # that to set it automatically with CORRSER, otherwise 0.1 to 1M
                 switch_state=SPGUSwitch.enabled,
                 switch_normal=SPGUSwitchNormal.open, # switch normally open or closed
                 switch_delay=0,# time to delay pulse opening, independent of pulse_delay
