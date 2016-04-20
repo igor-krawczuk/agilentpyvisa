@@ -221,12 +221,23 @@ class B1500():
             highspeed_adc_number=test_tuple.highspeed_adc_number,
             highspeed_adc_mode=test_tuple.highspeed_adc_mode)
         try:
+            measurements = [c.measurement for c in test_tuple.channels if c.measurement]
+            if len(measurements)>1:
+                if all([m.mode in () for m in measurements]):
+                    self.set_parallel_measurements(True)
+                else:
+                    raise ValueError("Parallel measurement only supported with spot,staircasesweep,sampling and CV-DC Bias. For others, use the dedicated multichannel measurements")
+
             for channel in test_tuple.channels:
                 self.setup_channel(channel)
+                if channel.measurement:
+                    self._setup_measurement(channel.number, channel.measurement)
                 # resets timestamp, executes and optionally waits for answer,
                 # returns data with elapsed
             ret = self.measure(test_tuple, force_wait,auto_read)
         finally:
+            if len(measurements)>1:
+                self.set_parallel_measurements(False)
             for channel in test_tuple.channels:
                 self._teardown_channel(channel)
         return ret
@@ -388,6 +399,12 @@ class B1500():
 to annotate error codes will come in a future release")
         return ret
 
+    def set_parallel_measurements(self, state):
+        if state:
+            self.write("PAD 1")
+        else:
+            self.write("PAD 0")
+
 
 
     def set_SMUSPGU_selector(self, port, status):
@@ -449,8 +466,6 @@ to annotate error codes will come in a future release")
         unit.connect(channel.number)
         unit.set_series_resistance(channel.series_resistance,channel.number)
         unit.set_selected_ADC(channel.number, channel.channel_adc)
-        if channel.measurement:
-            self._setup_measurement(channel.number, channel.measurement)
         if channel.dcforce is not None:
             unit.setup_dc_force(channel.number, channel.dcforce)
         elif channel.staircase_sweep is not None:
