@@ -221,12 +221,18 @@ class B1500():
             highspeed_adc_number=test_tuple.highspeed_adc_number,
             highspeed_adc_mode=test_tuple.highspeed_adc_mode)
         try:
-            measurements = [c.measurement for c in test_tuple.channels if c.measurement]
+            measurechannels = [c for c in test_tuple.channels if c.measurement]
+            measurements = [c.measurement for c in measurechannels]
+            if len(set(measurements))>1:
+                raise ValueError("Only 1 type of measurements allowed per setup, have {}".format(set(measurements)))
             if len(measurements)>1:
                 if all([m.mode in (MeasureModes.spot, MeasureModes.staircase_sweep, MeasureModes.CV_sweep_dc_bias,MeasureModes.sampling) for m in measurements]):
                     self.set_parallel_measurements(True)
+                    self.set_measure_mode(measurements[0].mode,*[c.number for c in measurechannels])
                 else:
                     raise ValueError("Parallel measurement only supported with spot,staircasesweep,sampling and CV-DC Bias sweep. For others, use the dedicated multichannel measurements")
+            elif len(measurements)==1:
+                self.set_measure_mode(measurements[0].mode, measurechannels[0].number)
 
             for channel in test_tuple.channels:
                 self.setup_channel(channel)
@@ -492,6 +498,10 @@ to annotate error codes will come in a future release")
                 errors.append(ret)
                 ret=self._check_err()
             return errors
+    def set_measure_mode(self,mode,*channels):
+        """ Defines which measurement to perform on the channel. Not used for all measurements,
+        check enums.py  or MeasureModes for a full list of measurements. Not in SMUs because for parallel measurements, need to set all channels at once"""
+        self.parent.write(format_command("MM",*channels))
 
     def _setup_measurement(self,channel, measurement):
         """ Sets up all parameters containing to the measurement. This is a

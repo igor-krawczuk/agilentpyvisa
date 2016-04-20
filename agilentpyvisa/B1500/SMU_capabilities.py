@@ -119,11 +119,6 @@ class StaircaseSweepUnit(SweepUnit):
 
 class SingleMeasure(object):
 
-    def set_measure_mode(self,mode,channel):
-        """ Defines which measurement to perform on the channel. Not used for all measurements,
-        check enums.py  or MeasureModes for a full list of measurements"""
-        self.parent.write(
-            "MM {}".format(",".join(["{}".format(x) for x in [mode, channel]])))
 
     def set_measure_side(self,channel, side):
         """ Specify whether the sensor should read on the current, voltage,
