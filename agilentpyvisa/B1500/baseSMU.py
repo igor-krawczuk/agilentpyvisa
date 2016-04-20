@@ -114,7 +114,7 @@ class SMU(object):
 
     def connect(self, channel=None):
         if not channel:
-            if len(self.channels) > 1:
+            if channel is None and len(self.channels) > 1:
                 raise ValueError(
                     "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                         self.slot, self.channels))
@@ -125,7 +125,7 @@ class SMU(object):
 
     def restore(self, channel=None):
         if not channel:
-            if len(self.channels) > 1:
+            if channel is None and len(self.channels) > 1:
                 raise ValueError(
                     "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                         self.slot, self.channels))
@@ -135,7 +135,7 @@ class SMU(object):
 
     def force_zero(self, channel=None):
         if not channel:
-            if len(self.channels) > 1:
+            if channel is None and len(self.channels) > 1:
                 exception_logger.warn("Multiple channels founds on Slot {}, please\
                                       specifiy one of {}. ONLY for DZ and CL  we apply the command to ALL channels \
                                       since it might be critical to shut of all channels".format(self.slot, self.channels)
@@ -152,7 +152,7 @@ class SMU(object):
 
     def set_connection_state(self, state, channel):
         if not channel:
-            if len(self.channels) > 1:
+            if channel is None and len(self.channels) > 1:
                 raise ValueError(
                     "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                         self.slot, self.channels))
@@ -164,7 +164,7 @@ class SMU(object):
                     return self.parent.write(format_command("CL", channel))
 
     def set_filter(self, state, channel=None):
-        if len(self.channels) > 1:
+        if channel is None and len(self.channels) > 1:
             raise ValueError(
                 "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                     self.slot, self.channels))
@@ -178,7 +178,7 @@ class SMU(object):
             raise ValueError(
                 "The module {}  on slot {} does not support the 1MOhm series resistance".format(
                     self.name, self.slot))
-        if len(self.channels) > 1:
+        if channel is None and len(self.channels) > 1:
             raise ValueError(
                 "Multiple channels founds on Slot {}, please specifiy one of {}".format(
                     self.slot, self.channels))
