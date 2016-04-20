@@ -49,7 +49,10 @@ class SPGUSMU(object):
         if not(loadZ==SPGUOutputImpedance.full_auto or (loadZ<=1e6 and loadZ>=0.1)):
             raise ValueError("loadZ must be SPGUOutputImpedance.full_auto or between 0.1 - 1e6 Ohm")
         self.load_impedance[channel] = loadZ
-        return self.parent.write(format_command("SER", channel, loadZ))
+        if not loadZ==SPGUOutputImpedance.full_auto:
+            return self.parent.write(format_command("SER", channel, loadZ))
+        else:
+            return self.set_loadimpedance_auto(channel)
 
     def set_loadimpedance_auto(
         self,
@@ -112,7 +115,7 @@ class SPGUSMU(object):
 
     def start_pulses(self):
         """Starts SPGU output"""
-        return self.parent.write("SPR")
+        return self.parent.write("SRP")
     def stop_pulses(self):
         """Stops SPGU output"""
         return self.parent.write("SPP")
