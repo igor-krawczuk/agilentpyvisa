@@ -669,13 +669,13 @@ to annotate error codes will come in a future release")
     def _check_err(self, all=False):
         """ check for single error, or all errors in stack"""
         query = "ERRX?"
-        ret = self.query(query)
+        ret = self._device.query(query)
         if all:
             results = []
             while ret[:2]!='+0':
                 exception_logger.warn(ret)
                 results.append(ret)
-                ret = self.query(query)
+                ret = self._device.query(query)
             return results
         if ret[:2]!='+0':
             exception_logger.warn(ret)
