@@ -43,6 +43,8 @@ class B1500():
         self.__channels={}
         self.__recording = False
         self.programs={}
+        self.__format = Format.ascii12_with_header_crl
+        self._device.read_terminator = getTerminator(self.__format)
         self.last_program=None
         self.__no_store=("*RST","DIAG?","*TST?","CA","AB","RCV","WZ?","ST","END",
                          "SCR","VAR","LST?","CORRSER?","SER?","SIM?","SPM?",
@@ -93,10 +95,38 @@ class B1500():
             exception_logger.info(self._check_err())
         return retval
 
-    def read(self, check_error=False):
+    def read(self, check_error=False, lines=1):
         """ Reads out the current output buffer and logs it to the query logger
         optionally checking for errors"""
-        retval = self._device.read()
+        retval=None
+        if "ascii" in repr(self.__format):
+            retval = self._device.read()
+        elif "binary4" in reps(self.__format):
+            retval = self._device.read_raw()
+        elif "binary8" in reps(self.__format):
+            retval = self._device.read_raw()
+        else:
+            raise ValueError("Unkown format {0}".format(self.__format))
+        if lines>1:
+            retval=[retval]
+            for i in range(1,lines):
+                try:
+                    if "ascii" in repr(self.__format):
+                        retval = self._device.read()
+                    elif "binary4" in reps(self.__format):
+                        retval = self._device.read_raw()
+                    elif "binary8" in reps(self.__format):
+                        retval = self._device.read_raw()
+                    else:
+                        raise ValueError("Unkown format {0}".format(self.__format))
+                except Exception as e:
+                    exception_logger.warn("Read error after {} lines".format(i))
+                    raise e
+                finally:
+                    query_logger.info(str(retval)+"\n")
+                    if check_error:
+                        exception_logger.info(self._check_err())
+                    return retval
         query_logger.info(str(retval)+"\n")
         if check_error:
             exception_logger.info(self._check_err())
@@ -569,6 +599,8 @@ to annotate error codes will come in a future release")
     def set_format(self, format, output_mode):
         """ Specifies output mode and format to use for testing. Check
         Formats enum for more details"""
+        self._device.read_terminator=getTerminator(format)
+        self.__format = format
         self.write("FMT {},{}".format(format, output_mode))
 
     def _check_modules(self, mainframe=False):
@@ -667,7 +699,7 @@ to annotate error codes will come in a future release")
     def __read_spot(self):
         for i in range(10):  # retry 10 times when failing
             try:
-                ret = self._device.read()
+                ret = self.read()
             except Exception:
                 continue
             return ret
@@ -679,26 +711,30 @@ to annotate error codes will come in a future release")
                 for i in range(test_tuple.measurement.steps):
                     for i in range(10):  # retry 10 times when failing
                         try:
-                            ret = self._device.read()
+                            ret = self.read()
                         except Exception:
                             continue
                         break
                     results.append(ret)
                 return results
 
-    def __parse_output(self, format, output):
+    def __parse_output(self, test_format, output):
         try:
-            terminator = getTerminator(format)
+            if test_format in (Format.binary4, Format.binary4_crl):
+                return parse_binary4(output)
+            elif test_format in (Format.binary8, Format.binary8,):
+                return parse_binary8(output)
+            terminator = getTerminator(test_format)
             lines = [x for x in output.split(terminator) if x]
             num_vals = len(lines[0].split(","))
-            if hasHeader(format):
+            if hasHeader(test_format):
                 header = splitHeader(lines)
                 dtypes = {"names": header,"formats": [np.float]*len(header)}
-                lines= (tuple([x.replace(h,"") for x,h in zip(line.split(","), header)]) for line in lines)
+                lines= (tuple([x.replace(h,"").lower() for x,h in zip(line.split(","), header)]) for line in lines)
                 return np.fromiter(lines, dtype=dtypes)
             else:
-                lines= (tuple([x for x in line.split(",")] for line in lines))
-                return np.fromiter(lines,dtype=[np.float]*num_vals)
+                lines= (tuple([x.lower() for x in line.split(",")] for line in lines))
+                return np.fromiter(lines,dtype=np.float)
         except Exception as e:
             exception_logger.warn(e)
             return output

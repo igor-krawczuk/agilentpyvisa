@@ -84,3 +84,62 @@ def hasHeader(format):
         return True
     else:
         return False
+
+def parse_binary4(byte_data):
+    raise NotImplementedError
+    bitstream = getBits(byte_data)
+    for datum in group_bits(bitstream,8*4):
+        a = datum[0]   # 1/0 measurement data/other data
+        b = datum[1]   # parameter 1/0: SMU: current or capacitance/voltage,cmu:conductance or susceptance/resistance or reactance
+        c = datum[2:7]  # range Value, see table page 1-42
+        d = datum[7:24]  # data count. multiply with range_val from table import for data. for SMU: measurement_data = d*range_val/50e3, source-data=d*range_val/20e3
+        e = datum[24:27] # status source data_001=> first or intermediate sweep 010 last sweep for measurement data:see table on 1-46
+        f = datum[27:32] # channel number
+        datum_type = parse4_getType(a)
+        param = parse4_getParam(b)
+        channel_num = parse4_getChannel(d)
+        unit = None # get the module using the channel number
+        drange = parse4_getRange(c, unit)
+        data = parse4_getData(d,drange,unit)
+        status = parse4_getStatus(e, datum_type)
+
+
+def parse_binary8(byte_data):
+    raise NotImplementedError
+    bitstream = getBits(byte_data)
+    for datum in group_bits(bitstream,8*8):
+        a = datum[0]  # 1/0 measurement data/other data
+        b = datum[1:8] # parmeters, see table on page 1-49
+        f = datum[59:64]  # channel number, see page 1-52
+        datum_type = parse4_getType(a)
+        param = parse4_getParam(b)
+        channel_num = parse4_getChannel(d)
+        if param == Binary8Param.TimeStamp:
+            h = datum[8:56]   # timestaamp count, timestamp = count /1e6 => count in us, stamp in s if count[0] =1 count = count -140737488355328 (overflow) count[0]=1 and count[1:]==0 is invalid
+            timestamp = parse8_getTimestamp(h)
+        else:
+            c = datum[8:16]  # range, see table on page 1-50
+            d = datum[16:48] # data count, muplity with range_val from table import to get data. see page 1-51
+            e = datum[48:56]  # status page 1-54
+            g = datum[56:59]  # adc see page 1-52
+        unit = None # get the module using the channel number
+        drange = parse4_getRange(c, unit)
+        data = parse4_getData(d,drange,unit)
+        status = parse4_getStatus(e, datum_type)
+
+
+def getBits(byte_data):
+    i=it(byte_data.hex(),base=16)
+    return bin(i).replace("0b","")
+
+def group_bits(iterable, n ):
+    it=iter(iterable)
+    while True:
+        accum=[]
+        for i in range(n):
+            try:
+                accum.append(next(it))
+            except StopIteration:
+                raise StopIteration("".join(accum))
+        yield "".join(accum)
+
