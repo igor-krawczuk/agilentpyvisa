@@ -149,7 +149,6 @@ class SingleMeasure(object):
                         self.slot, self.channels))
             else:
                 channel = self.channels[0]
-        self.set_measure_mode(config.mode, channel)
         if config.mode not in tuple([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
             self.set_measure_side(channel, config.side)
         if config.mode not in tuple([MeasureModes.sampling, MeasureModes.quasi_pulsed_spot]):
