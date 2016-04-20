@@ -37,7 +37,7 @@ class SPGUSMU(object):
 
     def set_pulse_levels(self, channel,  base, peak, pulse_src):
         """ Sets the base and peak value for the pulse source in the specified channel"""
-        if any([abs(v) > self.maxV for v in max(base+peak)]):
+        if any([abs(v) > self.maxV for v in base+peak]):
             raise ValueError("SPGU output must be in range -40V to 40V")
         return [self.parent.write(format_command("SPV", channel, src, b, p)) for src,b,p in zip(pulse_src,base,peak)]
 
