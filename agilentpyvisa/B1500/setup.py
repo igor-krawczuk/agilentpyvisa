@@ -42,6 +42,9 @@ class TestSetup(namedtuple('__TestSetup',
         adc_modes=[], format=Format.ascii12_with_header_crl,
         output_mode=OutputMode.dataonly, filter=Filter.disabled):
         # add default values
+        num_mes= len(set([c.measurement for c in channels if c.measurement]))
+        if num_mes>1:
+                raise ValueError("Only 1 type of measurements allowed per setup, have {}".format(num_mes))
         return super(TestSetup, cls).__new__(cls, channels, highspeed_adc_number,
             highspeed_adc_mode, adc_modes, format, output_mode, filter)
 
