@@ -415,7 +415,11 @@ to annotate error codes will come in a future release")
         There is no need stated in the documentation to ever deactive control modes, so the default is
         "enable"
         """
-        ret = self.write("ERMOD {},{}".format(mode, state))
+        if state==DIO_ControlState.enabled:
+            state=None
+            #HACK the tester complains about "incorrect terminator positi
+            #on with the mode argument, default is enabling so use the format_command
+        ret = self.write(format_command("ERMOD",mode, state))
         for k,v in DIO_ControlModes.__members__.items():
             if ret==mode:
                 self.__DIO_control_mode[mode]=state
