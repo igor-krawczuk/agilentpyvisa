@@ -46,7 +46,7 @@ class SPGUSMU(object):
         Setting the output resistance correctly ensures that the output voltage
         is as close as possible to the SPV value. Execute set_loadimpedance_auto to
         automatically set an estimated impedance"""
-        if not(loadZ==SPGUOutputImpedance.full_auto or (loadZ<1e6 and loadZ>0.1)):
+        if not(loadZ==SPGUOutputImpedance.full_auto or (loadZ<=1e6 and loadZ>=0.1)):
             raise ValueError("loadZ must be SPGUOutputImpedance.full_auto or between 0.1 - 1e6 Ohm")
         self.load_impedance[channel] = loadZ
         return self.parent.write(format_command("SER", channel, loadZ))
