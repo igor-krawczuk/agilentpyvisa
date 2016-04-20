@@ -275,19 +275,17 @@ class BinarySearchUnit(object):
                         self.slot, self.channels))
             else:
                 channel = self.channels[0]
-        if search_setup.input==Inputs.I:
-            if search_setup.start is not None:
-                self._validateSearchInput(search_setup.input,search_setup.start,search_setup.stop, search_setup.input_range)
-                self._validateCompliance(search_setup.input,search_setup.start,search_setup.stop, search_setup.input_range)
+        if search_setup.start is not None:
+            self._validateSearchInput(search_setup.input,search_setup.start,search_setup.stop,)
+            self._validateCompliance(search_setup.input, search_setup.compliance,search_setup.start,search_setup.stop)
+            if search_setup.input==Inputs.I:
                 self.set_binarysearch_current(channel,search_setup.start, search_setup.stop, search_setup.input_range, search_setup.compliance)
-            elif search_setup.sync_polarity is not None:
-                self.set_binarysearch_synchrous_current(channel,search_setup.sync_polarity, search_setup.sync_offset, search_setup.sync_compliance)
-        else:
-            if search_setup.start is not None:
-                self._validateSearchInput(search_setup.input,search_setup.start,search_setup.stop, search_setup.input_range)
-                self._validateCompliance(search_setup.input,search_setup.start,search_setup.stop, search_setup.input_range)
+            else:
                 self.set_binarysearch_voltage(channel,search_setup.start, search_setup.stop, search_setup.input_range, search_setup.compliance)
-            elif search_setup.sync_polarity is not None:
+        elif search_setup.sync_polarity is not None:
+            if search_setup.input==Inputs.I:
+                self.set_binarysearch_synchrous_current(channel,search_setup.sync_polarity, search_setup.sync_offset, search_setup.sync_compliance)
+            else:
                 self.set_binarysearch_synchrous_voltage(channel,search_setup.sync_polarity, search_setup.sync_offset, search_setup.sync_compliance)
 
     def set_binarysearch_controlmode(self, controlmode, auto_abort):
