@@ -501,7 +501,7 @@ to annotate error codes will come in a future release")
     def set_measure_mode(self,mode,*channels):
         """ Defines which measurement to perform on the channel. Not used for all measurements,
         check enums.py  or MeasureModes for a full list of measurements. Not in SMUs because for parallel measurements, need to set all channels at once"""
-        self.write(format_command("MM",*channels))
+        self.write(format_command("MM",mode,*channels))
 
     def _setup_measurement(self,channel, measurement):
         """ Sets up all parameters containing to the measurement. This is a
