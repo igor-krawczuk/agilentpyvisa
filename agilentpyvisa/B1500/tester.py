@@ -183,7 +183,8 @@ class B1500():
                 self._SPGU_wait()
         elif search:
             self.write("XE")
-        return (exc,self.__parse_output(test_tuple.format, data))
+        parsed_data = self.__parse_output(test_tuple.format, data) if data else data
+        return (exc,parsed_data)
 
     def check_settings(self, parameter):
         """ Queries the tester for the specified parameter
