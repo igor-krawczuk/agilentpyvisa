@@ -516,8 +516,8 @@ to annotate error codes will come in a future release")
         the acutal measurement or without any measurement at all"""
         unit = self.__channels[channel.number]
         unit.connect(channel.number)
-        unit.set_series_resistance(channel.series_resistance,channel.number)
         if not channel.spgu:
+            unit.set_series_resistance(channel.series_resistance,channel.number)
             unit.set_selected_ADC(channel.number, channel.channel_adc)
         if channel.dcforce is not None:
             unit.setup_dc_force(channel.number, channel.dcforce)
