@@ -38,7 +38,7 @@ class B1500():
             self._device = DummyTester()
         self.tests = OrderedDict()
         self.slots_installed={}
-        self.__DIO_control_mode={}
+        self._DIO_control_mode={}
         self.sub_channels = []
         self.__channels={}
         self._recording = False
@@ -265,7 +265,7 @@ class B1500():
                 self.set_measure_mode(measurements[0].mode, measurechannels[0].number)
 
             if any([x.spgu for x in test_tuple.channels]):
-                if not test_tuple.selector_setup:
+                if not test_tuple.spgu_selector_setup:
                     raise ValueError("If you want to use the spgu, you need to configure the SMUSPGU selector. seth the Testsetup.selector_setup with a list of (port,state) tuples")
                 self.enable_SMUSPGU()
                 for p,s in test_tuple.spgu_selector_setup:
@@ -283,7 +283,7 @@ class B1500():
             for channel in test_tuple.channels:
                 self._teardown_channel(channel)
             if test_tuple.spgu_selector_setup:
-                for p,s in test_tuple.selector_setup:
+                for p,s in test_tuple.spgu_selector_setup:
                     self.set_SMUSPGU_selector(p, SMU_SPGU_state.open_relay)
         return ret
 
@@ -455,20 +455,21 @@ to annotate error codes will come in a future release")
     def set_SMUSPGU_selector(self, port, status):
         """ After being enabled as explained in __set_DIO_control_mode,
         applys SMU_SPGU_state to the SMU_SPGU_port (see enums.py)"""
-        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==DIO_ControlState.enabled:
+        if not self._DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==DIO_ControlState.enabled:
             raise ValueError("First execute self.enable_SMUSPGU")
         return self.write("ERSSP {},{}".format(port, status))
 
     def check_SMUSPGU_selector(self, port):
         """ After being enabled as explained in __set_DIO_control_mode,
         queries the specified SMU_SPGU_port for its state"""
-        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==DIO_ControlState.enabled:
+        if not self._DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A):
             raise ValueError("First execute self.enable_SMUSPGU")
         return self.query("ERSSP? {}".format(port))
 
     def enable_SMUSPGU(self):
         """ Shorthand for activating spgu control"""
         self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A)
+        self._DIO_control_mode[DIO_ControlModes.SMU_PGU_Selector_16440A]=True
 
     def __set_DIO_control_mode(self, mode, state=DIO_ControlState.enabled):
         """ Sets the control mode of the tester. In order to control the SMU/PGU
@@ -484,7 +485,7 @@ to annotate error codes will come in a future release")
         ret = self.write(format_command("ERMOD",mode, state))
         for k,v in DIO_ControlModes.__members__.items():
             if ret==mode:
-                self.__DIO_control_mode[mode]=state
+                self._DIO_control_mode[mode]=state
         return ret
 
     def _check_DIO_control_mode(self):

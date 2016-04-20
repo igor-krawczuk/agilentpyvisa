@@ -187,7 +187,7 @@ class HVSPGU(SMU,SPGUSMU):
 class MFCFMU(SMU):
 
     def __init__(self, parent_device, slot):
-        raise NotImplementedError("This type of SMU has not been implemented yet")
+        exception_logger.warn( NotImplementedError("This type of SMU has not been implemented yet"))
         self.long_name = "Multiple frequency capacitive frequency measuring unit"
         self.models = ["B1520A"]
         # TODO special treatment
