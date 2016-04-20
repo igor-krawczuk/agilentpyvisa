@@ -41,7 +41,7 @@ class B1500():
         self.__DIO_control_mode={}
         self.sub_channels = []
         self.__channels={}
-        self.__recording = False
+        self._recording = False
         self.programs={}
         self.__format = Format.ascii12_with_header_crl
         self._device.read_terminator = getTerminator(self.__format)
@@ -73,7 +73,7 @@ class B1500():
         logs both to the query logger.Optionally checks for errors afterwards"""
         query_logger.info(msg)
         retval=[]
-        if self.__recording and any([x in msg for x in self.__no_store]):
+        if self._recording and any([x in msg for x in self.__no_store]):
             self.programs[self.last_program]["config_nostore"].append(msg)
         else:
             retval = self._device.query(msg, delay=delay)
@@ -86,7 +86,7 @@ class B1500():
         """ Writes the msg to the Tester and logs it in the write
         logger.Optionally checks for errors afterwards"""
         write_logger.info(msg)
-        if self.__recording and any([x in msg for x in self.__no_store]):
+        if self._recording and any([x in msg for x in self.__no_store]):
             self.programs[self.last_program]["config_nostore"].append(msg)
         else:
             retval = self._device.write(msg)
@@ -166,9 +166,9 @@ class B1500():
                     ready = self._operations_completed()
             if autoread:
                 if isSweep(channels):
-                    data = self.__read_sweep(channels)
+                    data = self._read_sweep(channels)
                 elif isSpot(channels):
-                    data = self.__read_spot()
+                    data = self._read_spot()
         # SPGU measurements
         elif SPGU:
             for x in spgu_channels:
@@ -264,6 +264,12 @@ class B1500():
             elif len(measurements)==1 and measurements[0].mode not in (MeasureModes.binary_search, MeasureModes.linear_search):
                 self.set_measure_mode(measurements[0].mode, measurechannels[0].number)
 
+            if any([x.spgu for x in test_tuple.channels]):
+                if not test_tuple.selector_setup:
+                    raise ValueError("If you want to use the spgu, you need to configure the SMUSPGU selector. seth the Testsetup.selector_setup with a list of (port,state) tuples")
+                self.enable_SMUSPGU()
+                for p,s in test_tuple.spgu_selector_setup:
+                    self.set_SMUSPGU_selector(p, s)
             for channel in test_tuple.channels:
                 self.setup_channel(channel)
                 if channel.measurement:
@@ -276,6 +282,9 @@ class B1500():
                 self.set_parallel_measurements(False)
             for channel in test_tuple.channels:
                 self._teardown_channel(channel)
+            if test_tuple.spgu_selector_setup:
+                for p,s in test_tuple.selector_setup:
+                    self.set_SMUSPGU_selector(p, SMU_SPGU_state.open_relay)
         return ret
 
     def _Pulsed_Spot(self, target, input_channel, ground_channel, base, pulse, width,compliance,input_range=None,measure_range=MeasureRanges_V.full_auto, hold=0 ):
@@ -614,30 +623,30 @@ to annotate error codes will come in a future release")
         else:
             return self.query("UNT? 0")
     def record_program(self,program_name):
-        if self.__recording:
+        if self._recording:
             raise ValueError("Already recording")
         id = self.programs[self.last_program]["id"]+1 if self.last_program else 1
         self.write("ST {}".format(id))
-        self.__recording = True
+        self._recording = True
         self.programs[program_name]={}
         self.programs[program_name]["index"]= id
         self.programs[program_name]["steps"]=[]
         self.programs[program_name]["config_nostore"]=[]
         self.last_program=program_name
     def stop_recording(self):
-        self.__recording = False
+        self._recording = False
         exception_logger.info("Recorded program {} with index {} and the following steps".format(self.last_program,self.programs[self.last_program]["index"]))
         exception_logger.info("\n".join(self.programs[self.last_program]["steps"]))
         exception_logger.info("as well as the following captured steps(check these manually before exeting the program, or execute the self.nostore_execute if you are sure all them are idempotent")
         exception_logger.info("\n".join(self.programs[self.last_program]["config_nostore"]))
 
     def run_prog(self, program_name):
-        if self.__recording:
+        if self._recording:
             raise ValueError("still recording")
         self.write("DO {}".format(self.programs[program_name]["index"]))
 
     def run_progs_by_ids(self, *ids):
-        if self.__recording:
+        if self._recording:
             raise ValueError("still recording")
         if any([not i in [x["index"] for x in self.programs]]):
             raise ValueError("One of your specified ids not in the buffer")
@@ -700,7 +709,7 @@ to annotate error codes will come in a future release")
                 slots[i+1]=self.__getModule(x.split(",")[0], i+1)
         return slots
 
-    def __read_spot(self):
+    def _read_spot(self):
         for i in range(10):  # retry 10 times when failing
             try:
                 ret = self.read()
@@ -708,7 +717,7 @@ to annotate error codes will come in a future release")
                 continue
             return ret
 
-    def __read_sweep(self, channels):
+    def _read_sweep(self, channels):
         for c in channels:
             if isinstance(c.measurement,StaircaseSweep):
                 results = []

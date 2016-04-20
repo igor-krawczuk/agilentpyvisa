@@ -21,6 +21,27 @@ class MeasurePulsedSpot(namedtuple("__MeasurePulsedSpot",["target","range","side
         mode=MeasureModes.pulsed_spot
         return super(MeasurePulsedSpot, cls).__new__(cls, target, range, side, mode)
 
+class MeasureLinearSearch(namedtuple("__MeasureLinearSearch",["mode",
+                                                              "target",
+                                                              "output_mode",
+                                                              "auto_abort",
+                                                              "post",
+                                                              "hold",
+                                                              "delay",
+                                                              "searchmode",
+                                                              "condition",
+                                                              "measure_range",
+                                                              "target_value",
+                                                              ])):
+    def __new__(cls,target,target_value,condition,post=SearchPost.start,output_mode=SearchOutput.sense_and_search, auto_abort=AutoAbort.enabled,hold=0,delay=0,searchmode=SearchModes.limit,measure_range=MeasureRanges_I.full_auto,):
+        # full_auto the same in I and V (=0)
+        mode=MeasureModes.binary_search
+        if hold > 655.35 or hold <0:
+            raise ValueError("hold must be between 0 and 655.35 s")
+        if delay > 65.535 or delay <0:
+            raise ValueError("delay must be between 0 and 65.535 s")
+        return super(MeasureBinarySearch, cls).__new__(cls, mode,target,output_mode,auto_abort,post,hold,delay,searchmode,condition,measure_range,target_value)
+
 class MeasureBinarySearch(namedtuple("__MeasureBinarySearch",["mode",
                                                               "target",
                                                               "output_mode",

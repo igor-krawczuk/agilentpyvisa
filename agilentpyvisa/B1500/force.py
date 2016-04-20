@@ -260,17 +260,41 @@ class BinarySearchSetup(
             raise ValueError("Compliance must be !=0")
         return super(BinarySearchSetup, cls).__new__(cls,input, input_range, start, stop, compliance, sync_polarity,sync_offset,sync_compliance )
 
+class LinearSearchSetup(
+    namedtuple(
+        "__LinearSearchSetup",
+        [
+        "input",
+        "input_range",
+        "start",
+        "stop",
+        "compliance",
+        "sync_polarity", # cannot be set together with start/stop values, needs to be set on different channels
+        "sync_offset",   # when defined the synchronous source will force start/stop/latest+offset (as defined by the measurement-post parameter) and keep the last value after the search
+        "sync_compliance",
+         ])):  #  WT
+    """ Specifies the setup for a binary search. Paremeters are
+    - target: Targets.I or Targets.V
+    - start/stop - search start and stop values, start must be !=stop
+    - input_range: Input range which covers start and stop
+    - compliance
+    - searchmode, Limit(0) search untl within target+-condition. count(1) finish
+        after condition tries(1-16)
+    - condition see above
+    - measure_range range that covers target value
+    - hold: wait time between starting the measurement and the first measuring.
+    max 655.35, resolution 0.01 s
+    - delay: settling time at every step between forcing a value and starting
+    the step measurement. max 65.535, resolution 0.0001 s
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    """
+    def __new__(cls,input,start,stop,compliance,sync_compliance=None,sync_offset=0,sync_polarity=None, input_range=InputRanges_I.full_auto):
+        if start and sync_polarity:
+            raise ValueError("Source channel and synchronouschannel have to be the different")
+        if not sync_compliance and sync_polarity:
+            sync_compliance = compliance
+        if start==stop:
+            raise ValueError("start must be != stop")
+        if compliance == 0:
+            raise ValueError("Compliance must be !=0")
+        return super(BinarySearchSetup, cls).__new__(cls,input, input_range, start, stop, compliance, sync_polarity,sync_offset,sync_compliance )

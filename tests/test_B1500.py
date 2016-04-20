@@ -32,13 +32,6 @@ class DummyTester():
 
 @pytest.fixture(scope="function")
 def tester(monkeypatch):
-    def mock(self,*args,**kw):
-        self._device = DummyTester()
-        self.slots_installed = {i:HRSMU(self, i) for i in range(5)}
-        self.slots_installed[5]=HVSPGU(self,5)
-        self._B1500__channels = [self.slots_installed[i] for i in range(6)]
-        self.sub_channels = list(range(6))
-    monkeypatch.setattr(B1500, "__init__", mock)
     b= B1500("test",auto_init=False)
     b.__chanels = [HRSMU(b, i) for i in range(5)]
     return b

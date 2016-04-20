@@ -35,18 +35,21 @@ class TestSetup(namedtuple('__TestSetup',
                             # default
                             "format",
                             "output_mode",
-                            "filter"
+                            "filter",
+                            "spgu_selector_setup",
                             ])):
 
     def __new__(cls, channels=[], highspeed_adc_number=1, highspeed_adc_mode=ADCMode.auto,
         adc_modes=[], format=Format.ascii12_with_header_crl,
-        output_mode=OutputMode.dataonly, filter=Filter.disabled):
+        output_mode=OutputMode.dataonly, filter=Filter.disabled,spgu_selector_setup=[]):
         # add default values
         num_mes= len(set([c.measurement for c in channels if c.measurement]))
+        if any([x.spgu for x in channels]) and not spgu_selector_setup:
+            raise ValueError("If you do want to use the spgu, you need to configure the SMUSPGU selector. supply a list of (port, state) tuples to spgu_selector_setup keyword")
         if num_mes>1:
                 raise ValueError("Only 1 type of measurements allowed per setup, have {}".format(num_mes))
         return super(TestSetup, cls).__new__(cls, channels, highspeed_adc_number,
-            highspeed_adc_mode, adc_modes, format, output_mode, filter)
+            highspeed_adc_mode, adc_modes, format, output_mode, filter,spgu_selector_setup)
 
 class Channel(
               namedtuple(
