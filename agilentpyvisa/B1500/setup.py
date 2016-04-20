@@ -69,4 +69,4 @@ class Channel(
         if [x is not None for x in [dcforce, staircase_sweep, pulsed_sweep,  quasipulse, pulsed_spot, spgu, highspeed_spot]].count(True)>1:
             raise ValueError("At most one force setup can be use per channel")
         return super(Channel, cls).__new__(cls, number, series_resistance, channel_adc,
-                   dcforce, staircase_sweep, pulse_sweep,  pulsed_spot, quasipulse, spgu, highspeed_spot, measurement )
+                   dcforce, staircase_sweep, pulsed_sweep,  pulsed_spot, quasipulse, spgu, highspeed_spot, measurement )

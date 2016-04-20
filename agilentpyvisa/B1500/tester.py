@@ -63,6 +63,7 @@ class B1500():
         for s,mod in self.slots_installed.items():
             self.sub_channels.extend(mod.channels)
         self.__channels = {i:self.slots_installed[self.__channel_to_slot(i)] for i in self.sub_channels}
+        self.enable_SMUSPGU()
         self._check_err()
 
     def query(self, msg, delay=None,check_error=False):
@@ -387,40 +388,54 @@ class B1500():
 to annotate error codes will come in a future release")
         return ret
 
-    def set_SMUPGU_selector1(self, state, port=SMU_SPGU_port.Module_1_Output_1):
-        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==True:
-            ret= self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A, DIO_ControlState.enabled)
-            self.__DIO_control_mode[DIO_ControlModes.SMU_PGU_Selector_16440A]=True
-        ret = self._set_SMU_SPGU_selector(port,state)
-        return ret
-
-    def set_SMUPGU_selector2(self, state, port=SMU_SPGU_port.Module_2_Output_1):
-        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==True:
-            ret= self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A, DIO_ControlState.enabled)
-            self.__DIO_control_mode[DIO_ControlModes.SMU_PGU_Selector_16440A]=True
-        ret = self._set_SMU_SPGU_selector(port,state)
-        return ret
 
 
-    def __set_DIO_control_mode(self, mode, state):
+    def set_SMUSPGU_selector(self, port, status):
+        """ After being enabled as explained in __set_DIO_control_mode,
+        applys SMU_SPGU_state to the SMU_SPGU_port (see enums.py)"""
+        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==DIO_ControlState.enabled:
+            raise ValueError("First execute self.enable_SMUSPGU")
+        return self.write("ERSSP {},{}".format(port, status))
+
+    def check_SMUSPGU_selector(self, port):
+        """ After being enabled as explained in __set_DIO_control_mode,
+        queries the specified SMU_SPGU_port for its state"""
+        if not self.__DIO_control_mode.get(DIO_ControlModes.SMU_PGU_Selector_16440A)==DIO_ControlState.enabled:
+            raise ValueError("First execute self.enable_SMUSPGU")
+        return self.query("ERSSP? {}".format(port))
+
+    def enable_SMUSPGU(self):
+        """ Shorthand for activating spgu control"""
+        self.__set_DIO_control_mode(DIO_ControlModes.SMU_PGU_Selector_16440A)
+
+    def __set_DIO_control_mode(self, mode, state=DIO_ControlState.enabled):
         """ Sets the control mode of the tester. In order to control the SMU/PGU
         Controller via ERSSP or the set_SMU_SPGU_selector first this function needs to
         be executed with mode=DIO_ControlModes.SMU_PGU_Selector_16440A, state=DIO_ControlState.enabled
+        There is no need stated in the documentation to ever deactive control modes, so the default is
+        "enable"
         """
         ret = self.write("ERMOD {},{}".format(mode, state))
+        for k,v in DIO_ControlModes.__members__.items():
+            if ret==mode:
+                self.__DIO_control_mode[mode]=state
         return ret
-    def _set_SMU_SPGU_selector(self, port, status):
-        """ After being enabled as explained in __set_DIO_control_mode,
-        applys SMU_SPGU_state to the SMU_SPGU_port (see enums.py)"""
-        return self.write("ERSSP {},{}".format(port, status))
-
-    def _check_SMU_SPGU_selector(self, port):
-        """ After being enabled as explained in __set_DIO_control_mode,
-        queries the specified SMU_SPGU_port for its state"""
-        return self.query("ERSSP? {}".format(port))
 
     def _check_DIO_control_mode(self):
-        ret = self.query("ERMOD?")
+        """  Returns the state of  control modes, as a some of the activated value.
+        the values are :
+            0 General Purpose control mode(always active)
+            1 16440A SMUSPGU
+            2 N1258A/N1259A
+            4 N1265A
+            8 N1266A
+            16 N1268A
+            e.g. 16440A and N1268A active=> output is 17
+        """
+        ret = int(self.query("ERMOD?").strip())
+        for k,v in DIO_ControlModes.__members__.items():
+            if ret==v:
+                return v
         return ret
 
     def setup_channel(self, channel):
