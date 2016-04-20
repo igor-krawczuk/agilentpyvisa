@@ -529,7 +529,7 @@ class HRSMU(GeneralSMU):
                                          }
     def check_search_target(self,target_type, target):
         if target_type==Targets.I:
-            if abs(target) >= 0 and abs(target) <=0.1:
+            if abs(target) >= 0 and abs(target) <=self._search_max_current:
                 return True
             else:
                 raise ValueError("Search target out of range for {} on slot {}".format(self.long_name,self.slot))
