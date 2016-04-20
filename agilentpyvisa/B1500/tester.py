@@ -223,10 +223,10 @@ class B1500():
         try:
             measurements = [c.measurement for c in test_tuple.channels if c.measurement]
             if len(measurements)>1:
-                if all([m.mode in () for m in measurements]):
+                if all([m.mode in (MeasureModes.spot, MeasureModes.staircase_sweep, MeasureModes.CV_sweep_dc_bias,MeasureModes.sampling) for m in measurements]):
                     self.set_parallel_measurements(True)
                 else:
-                    raise ValueError("Parallel measurement only supported with spot,staircasesweep,sampling and CV-DC Bias. For others, use the dedicated multichannel measurements")
+                    raise ValueError("Parallel measurement only supported with spot,staircasesweep,sampling and CV-DC Bias sweep. For others, use the dedicated multichannel measurements")
 
             for channel in test_tuple.channels:
                 self.setup_channel(channel)
