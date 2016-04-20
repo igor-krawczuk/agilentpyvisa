@@ -156,8 +156,9 @@ class SPGUSMU(object):
             spgu_setup.pulse_leading,
             spgu_setup.pulse_trailing,
             )  # SPT
-        self.set_apply(channel)  # SPUPD
         if spgu_setup.loadZ == SPGUOutputImpedance.full_auto:
+            self.set_apply(channel)  # SPUPD
             self.set_loadimpedance_auto(channel)
         else:
             self.set_loadimpedance(channel, spgu_setup.loadZ)  # SER
+        self.set_apply(channel)  # SPUPD

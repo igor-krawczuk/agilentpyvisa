@@ -29,7 +29,7 @@ exception_logger = getLogger(__name__+":ERRORS")
 
 
 class B1500():
-    def __init__(self, tester, auto_init=True):
+    def __init__(self, tester, auto_init=True, default_check_err=True):
         try:
             self.__rm = visa.ResourceManager()
             self._device = self.__rm.open_resource(tester)
@@ -42,6 +42,7 @@ class B1500():
         self.sub_channels = []
         self.__channels={}
         self._recording = False
+        self.default_check_err=default_check_err
         self.programs={}
         self.__format = Format.ascii12_with_header_crl
         self._device.read_terminator = getTerminator(self.__format)
@@ -78,8 +79,9 @@ class B1500():
         else:
             retval = self._device.query(msg, delay=delay)
             query_logger.info(str(retval)+"\n")
-            if check_error:
-                exception_logger.info(self._check_err())
+            err =self._check_err()
+            if err[:2]!="+0":
+                exception_logger.warn(msg)
         return retval
 
     def write(self, msg, check_error=False):
@@ -91,7 +93,7 @@ class B1500():
         else:
             retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
-        if check_error:
+        if check_error or self.default_check_err:
             err =self._check_err()
             if err[:2]!="+0":
                 exception_logger.warn(msg)
