@@ -243,14 +243,13 @@ class BinarySearchSetup(
         after condition tries(1-16)
     - condition see above
     - measure_range range that covers target value
-    - target_value
     - hold: wait time between starting the measurement and the first measuring.
     max 655.35, resolution 0.01 s
     - delay: settling time at every step between forcing a value and starting
     the step measurement. max 65.535, resolution 0.0001 s
     -
     """
-    def __new__(cls,input,start,stop,compliance,target_value,sync_compliance=None,sync_offset=0,sync_polarity=SyncPolarity.positive, input_range=InputRanges_I.full_auto):
+    def __new__(cls,input,start,stop,compliance,sync_compliance=None,sync_offset=0,sync_polarity=SyncPolarity.positive, input_range=InputRanges_I.full_auto):
         if not sync_compliance:
             sync__compliance=compliance
         if start==stop:

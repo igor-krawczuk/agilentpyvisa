@@ -261,7 +261,7 @@ class B1500():
                     self.set_measure_mode(measurements[0].mode,*[c.number for c in measurechannels])
                 else:
                     raise ValueError("Parallel measurement only supported with spot,staircasesweep,sampling and CV-DC Bias sweep. For others, use the dedicated multichannel measurements")
-            elif len(measurements)==1:
+            elif len(measurements)==1 and measurements.mode not in (MeasureModes.binary_search, MeasureModes.linear_search):
                 self.set_measure_mode(measurements[0].mode, measurechannels[0].number)
 
             for channel in test_tuple.channels:
@@ -516,6 +516,10 @@ to annotate error codes will come in a future release")
             raise NotImplementedError("HighSpeedSpot measurements not yet implemented")
         elif channel.spgu is not None:
             unit.setup_spgu(channel.number, channel.spgu)
+        elif channel.binarysearch is not None:
+            unit.setup_binarysearch_force(channel.number, channelbinarysearch)
+        elif channel.linearsearch is not None:
+            unit.setup_linearsearch_force(channel.number, channellinearsearch)
         else:
             raise ValueError(
                 "At least one setup should be in the channel, maybe you forgot to force ground to 0?")
