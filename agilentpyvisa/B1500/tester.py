@@ -92,7 +92,9 @@ class B1500():
             retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
         if check_error:
-            exception_logger.info(self._check_err())
+            err =self._check_err()
+            if err[:2]!="+0":
+                exception_logger.warn(msg)
         return retval
 
     def read(self, check_error=False, lines=1):
