@@ -127,7 +127,10 @@ class SPGU(namedtuple("__SPGU",[
             if not isinstance(pulse_trailing,Sequence):
                 pulse_trailing=[pulse_trailing,]
         if pulse_period is None:
-            pulse_period = sum(pulse_width)+1e-8
+            pulse_period = max(pulse_width)+max(pulse_delay)+1e-8+max(pulse_trailing)/0.8
+
+        if not max(pulse_width)+max(pulse_delay)+max(pulse_trailing)/0.8:
+            raise ValueError("pulse width+pulse delay + pulse trail/0.8 must be in puls period for all levels")
         if pulse_period < 2e-8 or pulse_period > 10:
             raise ValueError("Pulse period should be between 2e-8 s and 10 s, is {}s".format(pulse_period))
         if any([x < -40 or x > 40 for x in pulse_base+ pulse_peak]):
