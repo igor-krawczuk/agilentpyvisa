@@ -586,14 +586,14 @@ to annotate error codes will come in a future release")
         check enums.py  or MeasureModes for a full list of measurements. Not in SMUs because for parallel measurements, need to set all channels at once"""
         self.write(format_command("MM",mode,*channels))
 
-    def _setup_measurement(self,channel, measurement, force_new_setup=False):
+    def _setup_measurement(self,channel_number, measurement, force_new_setup=False):
         """ Sets up all parameters containing to the measurement. This is a
         dispatcher function, since a lot fo measurements have overlapping setup.
         Parameters Concerning the channel setup are handled in the respective
         setup_X functions, this function and its callees are only concerned with
         the measurements themselves."""
-        if  not self.__last_channel_measurements.get(channel.number)==channel or force_new_setup:
-            self.__last_channel_measurements[channel.number]==channel
+        if  not self.__last_channel_measurements.get(channel_number)==measurement or force_new_setup:
+            self.__last_channel_measurements[channel_number]=measurement
             if measurement.mode in [
                 MeasureModes.spot,
                 MeasureModes.staircase_sweep,
@@ -607,7 +607,7 @@ to annotate error codes will come in a future release")
                 MeasureModes.staircase_sweep_pulsed_bias,
                 MeasureModes.quasi_pulsed_spot,
             ]:
-                self.__channels[channel]._setup_xe_measure(measurement,channel=channel )
+                self.__channels[channel_number]._setup_xe_measure(measurement,channel=channel_number )
             elif measurement.mode in [
                 MeasureModes.spot_C,
                 MeasureModes.pulsed_spot_C,
@@ -620,9 +620,9 @@ to annotate error codes will come in a future release")
             elif measurement.mode == MeasureModes.quasi_static_cv:
                 raise NotImplemented("QuasistatiCV measurement not yet implemented")
             elif measurement.mode ==MeasureModes.binary_search:
-                self.__channels[channel].setup_binarysearch_measure(measurement,channel=channel )
+                self.__channels[channel_number].setup_binarysearch_measure(measurement,channel=channel_number )
             elif measurement.mode==MeasureModes.linear_search:
-                self.__channels[channel].setup_linearsearch_measure(measurement,channel=channel )
+                self.__channels[channel_number].setup_linearsearch_measure(measurement,channel=channel_number )
             else:
                 raise ValueError("Unknown Measuremode")
 
