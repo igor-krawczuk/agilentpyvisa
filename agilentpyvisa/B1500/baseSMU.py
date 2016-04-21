@@ -17,6 +17,11 @@ class SMU(object):
         self.measurements = {}  # dict with channel number as id
         self.name = self.__class__.__name__
 
+    def calibrate(self):
+        return self.parent.query(format_command("*CAL?",self.slot))
+    def test(self):
+        return self.parent.query(format_command("*TST",self.slot))
+
     def set_selected_ADC(self, channel, adc):
         """ Selects which ADC to use for the specified channe. Available are
         highspeed = 0

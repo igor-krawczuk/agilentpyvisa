@@ -1,3 +1,34 @@
+from logging import getLogger
+exception_logger = getLogger(__name__+":ERRORS")
+from .enums import *
+from .force import *
+from .helpers import format_command
+
+class HighSpeedSpotUnit(object):
+
+"""
+DV gate
+DV source
+SSP
+ACT
+if phase compensation
+ADJ
+ADJ?
+endif
+FC
+ACV
+if open correction
+DCORR
+CORR?
+CORRST x,1,1 open correciton on
+CORRST x,2,0 short correction off
+CORRST x,3,0 load correction off
+IMP
+LMN
+DCV
+TSR
+TTC
+TSQ
 
     def highspeed_spot_setup(self, channel_number, highspeed_setup):
         if highspeed_setup.target == Targets.C:

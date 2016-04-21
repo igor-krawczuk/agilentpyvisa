@@ -377,3 +377,11 @@ class SearchControlMode(IntEnum):
 class SearchModes(IntEnum):
     limit = 0
     count = 1
+
+
+class DiagnosticItem(IntEnum):
+    trigger_IO = 1
+    high_voltage_LED = 3
+    digital_IO = 4
+    interlock_open = 6
+    interlock_close = 7

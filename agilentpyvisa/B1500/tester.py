@@ -75,6 +75,19 @@ class B1500():
         self.enable_SMUSPGU()
         self._check_err()
 
+    def diagnostics(self, item):
+        """ from the manual:
+            - before using DiagnosticItem.trigger_IO , connect a BNC cable between the Ext Trig In and
+            Out connectors.
+            - After executing DiagnosticItem.high_voltage_LED confirm the status of LED. Then enter the AB
+            command
+            If the LED does not blink, the B1500 must be repaired.
+            - Before executing DiagnosticItem.digital_IO, disconnect any cable from the import digital I/O port.
+            - Before executing interlock_open or interlock_closed , open and close the
+            interlock circuit respectively
+            """
+        return self.query(format_command("DIAG?", item))
+
     def query(self, msg, delay=None,check_error=False):
         """ Writes the msg to the Tester, reads output buffer after delay and
         logs both to the query logger.Optionally checks for errors afterwards"""
@@ -698,6 +711,7 @@ to annotate error codes will come in a future release")
         self.write("DO {}".format(self.programs[program_name]["index"]))
 
     def run_progs_by_ids(self, *ids):
+        """ Runs the specified programs, in order of the ids given"""
         if self._recording:
             raise ValueError("still recording")
         if any([not i in [x["index"] for x in self.programs]]):
