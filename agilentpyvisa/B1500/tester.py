@@ -37,11 +37,17 @@ class B1500():
             exception_logger.warn("Could not find VISA driver, setting _device to std_out")
             self._device = DummyTester()
         self.tests = OrderedDict()
+        self.__last_channel_setups={}
+        self.__last_channel_measurements={}
         self.slots_installed={}
         self._DIO_control_mode={}
         self.sub_channels = []
+        self.__filter_all = None
+        self.__ADC={}
+        self.__TSC = None
         self.__channels={}
         self._recording = False
+        self.__HIGHSPEED_ADC={"number":None,"mode":None}
         self.default_check_err=default_check_err
         self.programs={}
         self.__format = Format.ascii12_with_header_crl
@@ -245,18 +251,21 @@ class B1500():
             compliance, input_range, power_comp,
             measure_range)
 
-    def run_test(self, test_tuple, force_wait=False, auto_read=False):
+    def run_test(self, test_tuple, force_wait=False, auto_read=False, default_errcheck=None, force_new_setup=False):
         """ Takes in a test tuple specifying channel setups and global parameters,
         setups up parameters, channels and measurements accordingly and then performs the specified test,
         returning gathered data if auto_read was specified. Allways
         cleans up any opened channels after being run (forces zero and disconnect)"""
-        self.set_format(test_tuple.format, test_tuple.output_mode)
-        self.set_filter_all(test_tuple.filter)
-        self._enable_timestamp(True)
+        old_default=self.default_check_err
+        if default_errcheck is not None:
+            self.default_check_err=default_errcheck
+        self.set_format(test_tuple.format, test_tuple.output_mode, force_new_setup)
+        self.set_filter_all(test_tuple.filter, force_new_setup)
+        self._enable_timestamp(True, force_new_setup)
         self._set_adc_global(
             adc_modes=test_tuple.adc_modes,
             highspeed_adc_number=test_tuple.highspeed_adc_number,
-            highspeed_adc_mode=test_tuple.highspeed_adc_mode)
+            highspeed_adc_mode=test_tuple.highspeed_adc_mode, force_new_setup=force_new_setup)
         try:
             measurechannels = [c for c in test_tuple.channels if c.measurement]
             measurements = [c.measurement for c in measurechannels]
@@ -278,9 +287,9 @@ class B1500():
                 for p,s in test_tuple.spgu_selector_setup:
                     self.set_SMUSPGU_selector(p, s)
             for channel in test_tuple.channels:
-                self.setup_channel(channel)
+                self.setup_channel(channel, force_new_setup)
                 if channel.measurement:
-                    self._setup_measurement(channel.number, channel.measurement)
+                    self._setup_measurement(channel.number, channel.measurement, force_new_setup)
                 # resets timestamp, executes and optionally waits for answer,
                 # returns data with elapsed
             ret = self.measure(test_tuple, force_wait,auto_read)
@@ -292,6 +301,7 @@ class B1500():
             if test_tuple.spgu_selector_setup:
                 for p,s in test_tuple.spgu_selector_setup:
                     self.set_SMUSPGU_selector(p, SMU_SPGU_state.open_relay)
+            self.default_check_err=old_default
         return ret
 
     def _Pulsed_Spot(self, target, input_channel, ground_channel, base, pulse, width,compliance,input_range=None,measure_range=MeasureRanges_V.full_auto, hold=0 ):
@@ -427,12 +437,16 @@ class B1500():
         self._device.timeout = old_timeout
         return ready
 
-    def _enable_timestamp(self, state):
+    def _enable_timestamp(self, state, force_new_setup=False):
         """ Enable Timestamp during measurements"""
-        if state:
-            return self.write("TSC {}".format(1))
+        if self.__TSC==state and not force_new_setup:
+            exception_logger.info("No change for timestamp, not sending")
         else:
-            return self.write("TSC {}".format(0))
+            self.__TSC=state
+            if state:
+                return self.write("TSC {}".format(1))
+            else:
+                return self.write("TSC {}".format(0))
 
     def _reset_timestamp(self):
         """ Clears Timestamp counter, if 100us resolution call this at least
@@ -512,90 +526,100 @@ to annotate error codes will come in a future release")
                 return v
         return ret
 
-    def setup_channel(self, channel):
+    def setup_channel(self, channel, force_new_setup=False):
         """ Configures channel with any parameters which can be set before
         the acutal measurement or without any measurement at all"""
         unit = self.__channels[channel.number]
         unit.connect(channel.number)
-        if not channel.spgu:
-            unit.set_series_resistance(channel.series_resistance,channel.number)
-            unit.set_selected_ADC(channel.number, channel.channel_adc)
-        if channel.dcforce is not None:
-            unit.setup_dc_force(channel.number, channel.dcforce)
-        elif channel.staircase_sweep is not None:
-            unit.setup_staircase_sweep(channel.number, channel.staircase_sweep)
-        elif channel.pulsed_sweep is not None:
-            unit.setup_pulsed_sweep(channel.number, channel.pulsed_sweep)
-        elif channel.pulsed_spot is not None:
-            unit.setup_pulsed_spot(channel.number, channel.pulsed_spot)
-        elif channel.quasipulse is not None:
-            raise NotImplementedError("Quasipulse measurements not yet implemented")
-        elif channel.highspeed_spot is not None:
-            raise NotImplementedError("HighSpeedSpot measurements not yet implemented")
-        elif channel.spgu is not None:
-            unit.setup_spgu(channel.number, channel.spgu)
-        elif channel.binarysearch is not None:
-            unit.setup_binarysearch_force(channel.binarysearch,channel=channel.number)
-        elif channel.linearsearch is not None:
-            unit.setup_linearsearch_force(channel.linearsearch,channel=channel.number)
+        if  not self.__last_channel_setups.get(unit)==channel or force_new_setup:
+            self.__last_channel_setups[unit]=channel
+            if not channel.spgu:
+                unit.set_series_resistance(channel.series_resistance,channel.number)
+                unit.set_selected_ADC(channel.number, channel.channel_adc)
+            if channel.dcforce is not None:
+                unit.setup_dc_force(channel.number, channel.dcforce)
+            elif channel.staircase_sweep is not None:
+                unit.setup_staircase_sweep(channel.number, channel.staircase_sweep)
+            elif channel.pulsed_sweep is not None:
+                unit.setup_pulsed_sweep(channel.number, channel.pulsed_sweep)
+            elif channel.pulsed_spot is not None:
+                unit.setup_pulsed_spot(channel.number, channel.pulsed_spot)
+            elif channel.quasipulse is not None:
+                raise NotImplementedError("Quasipulse measurements not yet implemented")
+            elif channel.highspeed_spot is not None:
+                raise NotImplementedError("HighSpeedSpot measurements not yet implemented")
+            elif channel.spgu is not None:
+                unit.setup_spgu(channel.number, channel.spgu)
+            elif channel.binarysearch is not None:
+                unit.setup_binarysearch_force(channel.binarysearch,channel=channel.number)
+            elif channel.linearsearch is not None:
+                unit.setup_linearsearch_force(channel.linearsearch,channel=channel.number)
+            else:
+                raise ValueError(
+                    "At least one setup should be in the channel, maybe you forgot to force ground to 0?")
+            errors = []
+            ret = self._check_err()
+            if ret[:2]=='+0':
+                return ret
+            else:
+                while ret[:2]!='+0':
+                    errors.append(ret)
+                    ret=self._check_err()
+                return errors
         else:
-            raise ValueError(
-                "At least one setup should be in the channel, maybe you forgot to force ground to 0?")
-        errors = []
-        ret = self._check_err()
-        if ret[:2]=='+0':
-            return ret
-        else:
-            while ret[:2]!='+0':
-                errors.append(ret)
-                ret=self._check_err()
-            return errors
+            exception_logger.warn("Channel configuration for channel {} has not changed, skiping setup".format(channel.number))
     def set_measure_mode(self,mode,*channels):
         """ Defines which measurement to perform on the channel. Not used for all measurements,
         check enums.py  or MeasureModes for a full list of measurements. Not in SMUs because for parallel measurements, need to set all channels at once"""
         self.write(format_command("MM",mode,*channels))
 
-    def _setup_measurement(self,channel, measurement):
+    def _setup_measurement(self,channel, measurement, force_new_setup=False):
         """ Sets up all parameters containing to the measurement. This is a
         dispatcher function, since a lot fo measurements have overlapping setup.
         Parameters Concerning the channel setup are handled in the respective
         setup_X functions, this function and its callees are only concerned with
         the measurements themselves."""
-        if measurement.mode in [
-            MeasureModes.spot,
-            MeasureModes.staircase_sweep,
-            MeasureModes.sampling,
-            MeasureModes.multi_channel_sweep,
-            MeasureModes.CV_sweep_dc_bias,
-            MeasureModes.multichannel_pulsed_spot,
-            MeasureModes.multichannel_pulsed_sweep,
-            MeasureModes.pulsed_spot,
-            MeasureModes.pulsed_sweep,
-            MeasureModes.staircase_sweep_pulsed_bias,
-            MeasureModes.quasi_pulsed_spot,
-        ]:
-            self.__channels[channel]._setup_xe_measure(measurement,channel=channel )
-        elif measurement.mode in [
-            MeasureModes.spot_C,
-            MeasureModes.pulsed_spot_C,
-            MeasureModes.pulsed_sweep_CV,
-            MeasureModes.sweep_Cf,
-            MeasureModes.sweep_CV_ac_level,
-            MeasureModes.sampling_Ct,
-        ]:
-            raise NotImplemented("CapacitanceMeasurement not yet implemented")
-        elif measurement.mode == MeasureModes.quasi_static_cv:
-            raise NotImplemented("QuasistatiCV measurement not yet implemented")
-        elif measurement.mode ==MeasureModes.binary_search:
-            self.__channels[channel].setup_binarysearch_measure(measurement,channel=channel )
-        elif measurement.mode==MeasureModes.linear_search:
-            self.__channels[channel].setup_linearsearch_measure(measurement,channel=channel )
-        else:
-            raise ValueError("Unknown Measuremode")
+        if  not self.__last_channel_measurements.get(channel.number)==channel or force_new_setup:
+            self.__last_channel_measurements[channel.number]==channel
+            if measurement.mode in [
+                MeasureModes.spot,
+                MeasureModes.staircase_sweep,
+                MeasureModes.sampling,
+                MeasureModes.multi_channel_sweep,
+                MeasureModes.CV_sweep_dc_bias,
+                MeasureModes.multichannel_pulsed_spot,
+                MeasureModes.multichannel_pulsed_sweep,
+                MeasureModes.pulsed_spot,
+                MeasureModes.pulsed_sweep,
+                MeasureModes.staircase_sweep_pulsed_bias,
+                MeasureModes.quasi_pulsed_spot,
+            ]:
+                self.__channels[channel]._setup_xe_measure(measurement,channel=channel )
+            elif measurement.mode in [
+                MeasureModes.spot_C,
+                MeasureModes.pulsed_spot_C,
+                MeasureModes.pulsed_sweep_CV,
+                MeasureModes.sweep_Cf,
+                MeasureModes.sweep_CV_ac_level,
+                MeasureModes.sampling_Ct,
+            ]:
+                raise NotImplemented("CapacitanceMeasurement not yet implemented")
+            elif measurement.mode == MeasureModes.quasi_static_cv:
+                raise NotImplemented("QuasistatiCV measurement not yet implemented")
+            elif measurement.mode ==MeasureModes.binary_search:
+                self.__channels[channel].setup_binarysearch_measure(measurement,channel=channel )
+            elif measurement.mode==MeasureModes.linear_search:
+                self.__channels[channel].setup_linearsearch_measure(measurement,channel=channel )
+            else:
+                raise ValueError("Unknown Measuremode")
 
-    def set_filter_all(self, filter):
+    def set_filter_all(self, filter_state, force_new_setup=False):
         """ Sets the spike and overshoot filter on the SMU output."""
-        return self.write("FL {}".format(filter))
+        if self.__filter_all==filter_state and not force_new_setup:
+            exception_logger.info("No change in filter, not sending command")
+        else:
+            self.__filter_all=filter_state
+            return self.write("FL {}".format(filter_state))
     # individual commands (grouped only for input/target types, i.e. V/I
 
 
@@ -603,27 +627,46 @@ to annotate error codes will come in a future release")
         self,
         adc_modes=[], # list of (adctype,admode) tuples, maximum 3, see enums.py
         highspeed_adc_number=None,
-     highspeed_adc_mode=None):
+     highspeed_adc_mode=None, force_new_setup=False):
         """ Set the configration for the different ADC types, switching between
         manual and auto modes for all ADCs and specifying samples/integration time
         for the highspeed ADC"""
         if adc_modes:
-            return [self.write(format_command("AIT",adctype,adcmode)) for adctype,adcmode in adc_modes]
+            return [self.set_adc(adctype, adcmode,force_new_setup) for adctype,adcmode in adc_modes]
         else:
             if highspeed_adc_number is None or highspeed_adc_mode is None:
                 raise ValueError(
                     "Either give complete adc mapping or specify highspeed ADC")
+            self.set_highspeed_ADC(highspeed_adc_number, highspeed_adc_mode,force_new_setup)
+
+    def set_adc(self, adc, mode, force_new_setup=False):
+        """ Set the configration for the different ADC types, switching between
+        manual and auto modes for all ADC
+        """
+        if not self.__ADC.get(adc)==mode or force_new_setup:
+            self.__ADC[adc]=mode
+            self.write(format_command("AIT",adc,mode))
+        else:
+            exception_logger.info("No change for adc {}, not sending AIT".format(adc))
+
+    def set_highspeed_ADC(self, number, mode, force_new_setup=False):
+        if not (self.__HIGHSPEED_ADC["number"]== number and self.__HIGHSPEED_ADC["mode"]==mode) or force_new_setup:
             return self.write(
                 "AV {}, {}".format(
-                    highspeed_adc_number,
-                    highspeed_adc_mode))
+                    number,
+                    mode))
+        else:
+            exception_logger.info("AV parameters not changed, no write")
 
-    def set_format(self, format, output_mode):
+    def set_format(self, format, output_mode, force_new_setup=False):
         """ Specifies output mode and format to use for testing. Check
         Formats enum for more details"""
-        self._device.read_terminator=getTerminator(format)
-        self.__format = format
-        self.write("FMT {},{}".format(format, output_mode))
+        if not self.__format == format or force_new_setup:
+            self._device.read_terminator=getTerminator(format)
+            self.__format = format
+            self.write("FMT {},{}".format(format, output_mode))
+        else:
+            exception_logger.info("FMT parameters not changed, no write")
 
     def _check_modules(self, mainframe=False):
         """ Queries for installed modules and optionally mainframes connected"""

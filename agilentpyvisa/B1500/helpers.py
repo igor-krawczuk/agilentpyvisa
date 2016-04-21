@@ -85,7 +85,8 @@ def hasHeader(format):
     else:
         return False
 
-def parse_binary4(byte_data):
+""" postpose binary parsing for now
+def parse_binary4(self,byte_data):
     raise NotImplementedError
     bitstream = getBits(byte_data)
     for datum in group_bits(bitstream,8*4):
@@ -97,11 +98,35 @@ def parse_binary4(byte_data):
         f = datum[27:32] # channel number
         datum_type = parse4_getType(a)
         param = parse4_getParam(b)
-        channel_num = parse4_getChannel(d)
-        unit = None # get the module using the channel number
+        channel_num = int(d,base=2)
+        unit = self.slots_installed.get(self.__channel_to_slot(channel)) # get the module using the channel number
         drange = parse4_getRange(c, unit)
         data = parse4_getData(d,drange,unit)
         status = parse4_getStatus(e, datum_type)
+
+class Binary4DataType(Enum):
+    MeasurementData =1
+    OtherData = 0
+
+def parse4_getType(bit):
+    if bit==1:
+        return Binary4DataType.MeasurementData
+    elif bit==0:
+        return Binary4DataType.MeasurementData
+class Binary4Param(Enum):
+    voltage = "SMU0"
+    current = "SMU1"
+    resistance_reactance ="CMU0"
+    conductance_susceptance = "CMU1"
+def parse4_getParam(b, spgu):
+    if b == 1 and not "CM" in repr(spgu):
+        return Binary4Param.current
+    elif b == 0 and not "CM" in repr(spgu):
+        return Binary4Param.voltage
+    elif b == 1 and "CM" in repr(spgu):
+        return Binary4Param.conductance_susceptance
+    elif b == 0 and "CM" in repr(spgu):
+        return Binary4Param.resistance_reactance
 
 
 def parse_binary8(byte_data):
@@ -143,3 +168,4 @@ def group_bits(iterable, n ):
                 raise StopIteration("".join(accum))
         yield "".join(accum)
 
+"""
