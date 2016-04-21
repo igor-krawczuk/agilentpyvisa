@@ -67,7 +67,7 @@ class StaircaseSweepUnit(SweepUnit):
                 input_range,
                 start,
                 stop,
-                stop,
+                step,
                 Icomp,
                 power_comp))
 
