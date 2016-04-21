@@ -650,7 +650,7 @@ to annotate error codes will come in a future release")
             exception_logger.info("No change for adc {}, not sending AIT".format(adc))
 
     def set_highspeed_ADC(self, number, mode, force_new_setup=False):
-        if not (self.__HIGHSPEED_ADC["number"]== number and self.__HIGHSPEED_ADC["mode"]==mode) or force_new_setup:
+        if (not (self.__HIGHSPEED_ADC["number"]== number and self.__HIGHSPEED_ADC["mode"]==mode)) or force_new_setup:
             return self.write(
                 "AV {}, {}".format(
                     number,
