@@ -746,8 +746,8 @@ to annotate error codes will come in a future release")
         """ Force Channel to zero and then disconnect """
         if channel.number not in self.sub_channels:
             exception_logger.warn("No channel {} installed, only have \n{}\n, proceeding with teardown but call check_err and verify your setup".format(channel, self.sub_channels))
-            self._zero_channel(channel.number)
-            self._close_channel(channel.number)
+        self._zero_channel(channel.number)
+        self._close_channel(channel.number)
 
     # methods only used in discovery,intended to be used only by via public calls,
     # not directly
