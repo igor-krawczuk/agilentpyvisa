@@ -737,7 +737,7 @@ to annotate error codes will come in a future release")
 
     def _check_err(self, all=False):
         """ check for single error, or all errors in stack"""
-            query = "ERRX?"
+        query = "ERRX?"
         if not self._recording:
             ret = self._device.query(query)
             if all:
