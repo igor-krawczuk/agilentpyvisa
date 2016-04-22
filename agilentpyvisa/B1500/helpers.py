@@ -104,9 +104,9 @@ def parse_ascii(test_format, output , num_measure, timestamp):
     num_fields = num_measure if not timestamp else num_measure+1
     dtypes = np.float
     if hasHeader(test_format):
-        header = getFields(num_fields, lines)
-        dtypes = {"names": header, "formats": [np.float]*len(header)}
-        lines = list(filter(lambda x: any([f in x for f in header]), lines))
+        fields = getFields(num_fields, lines)
+        dtypes = {"names": fields, "formats": [np.float]*len(fields)}
+        lines = list(filter(lambda x: any([f in x for f in fields]), lines))
         sel_lists = (( 0 if x != i else 1 for x in range(num_fields)) for i in range(num_fields))
         field_iters = (compress(lines, cycle(sel_list)) for sel_list in sel_lists)
         filtered = starmap(lambda fi, it: list(map(lambda el: el.replace(fi, ''), it)), zip(fields, field_iters))
