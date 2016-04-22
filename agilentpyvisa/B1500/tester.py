@@ -1,9 +1,9 @@
 # vim: set fileencoding: utf-8 -*-
 # -*- coding: utf-8 -*-
+import visa
 from itertools import cycle, starmap, compress
 import pandas as pd
 import numpy as np
-import visa
 from collections import OrderedDict
 from .force import *
 from .force import (
