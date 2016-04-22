@@ -52,8 +52,9 @@ class B1500():
         self.__HIGHSPEED_ADC={"number":None,"mode":None}
         self.default_check_err=default_check_err
         self.programs={}
-        self.__format = Format.ascii12_with_header_crl
-        self._device.read_terminator = getTerminator(self.__format)
+        self.__format = None
+        self.__outputMode = None
+        self._device.read_terminator = None
         self.last_program=None
         self.__no_store=("*RST","DIAG?","*TST?","CA","AB","RCV","WZ?","ST","END",
                          "SCR","VAR","LST?","CORRSER?","SER?","SIM?","SPM?",
@@ -687,9 +688,10 @@ to annotate error codes will come in a future release")
     def set_format(self, format, output_mode, force_new_setup=False):
         """ Specifies output mode and format to use for testing. Check
         Formats enum for more details"""
-        if not self.__format == format or force_new_setup:
+        if not (self.__format == format and self.__outputMode == output_mode) or force_new_setup :
             self._device.read_terminator=getTerminator(format)
             self.__format = format
+            self.__outputMode = output_mode
             self.write("FMT {},{}".format(format, output_mode))
         else:
             exception_logger.info("FMT parameters not changed, no write")
@@ -810,7 +812,7 @@ to annotate error codes will come in a future release")
             elif test_format in (Format.binary8, Format.binary8,):
                 return parse_binary8(output)
             else:
-                return parse_ascii(test_format, output ,num_measurements, timestamp, self.__format)
+                return parse_ascii(test_format, output ,num_measurements, timestamp, self.__outputMode)
         except Exception as e:
             exception_logger.warn(e)
             return output
