@@ -85,6 +85,34 @@ def hasHeader(format):
     else:
         return False
 
+def getFields(num_fields, lines):
+    it = iter(lines)
+    fields = []
+    while len(fields)<num_fields:
+        x= next(it)
+        sign = x[3]
+        fields.append(x.split(sign)[0])
+    return fields
+
+def parse_ascii(fmt, output , num_measure, timestamp):
+    terminator = getTerminator(fmt)
+    lines = [x for x in output.split(terminator) if x]
+    num_fields = num_measure if not timestamp else num_measure+1
+    dtypes = np.float
+    if hasHeader(test_format):
+        header = getFields(num_fields, lines)
+        dtypes = {"names": header,"formats": [np.float]*len(header)}
+        lines = list(filter(lambda x: any([f in x for f in header]), lines))
+        sel_lists = (( 0 if x != i else 1 for x in range(num_fields)) for i in range(num_fields))
+        field_iters = (compress(lines, cycle(sel_list)) for sel_list in sel_lists)
+        filtered = starmap(lambda fi, it: list(map(lambda el: el.replace(fi, ''), it)), zip(fields, field_iters))
+        filtered_arr = np.array(list(zip(*filtered)), dtype=dtypes)
+    else:
+        lines= (tuple([x.lower() for x in line.split(",")] for line in lines))
+        filtered_arr = np.fromiter(lines,dtype=np.float)
+    return pd.DataFrame(filtered_arr)
+
+
 """ postpose binary parsing for now
 def parse_binary4(self,byte_data):
     raise NotImplementedError

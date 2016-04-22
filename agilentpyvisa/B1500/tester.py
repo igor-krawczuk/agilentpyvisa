@@ -1,5 +1,7 @@
 # vim: set fileencoding: utf-8 -*-
 # -*- coding: utf-8 -*-
+from itertools import cycle, starmap, compress
+import pandas as pd
 import numpy as np
 import visa
 from collections import OrderedDict
@@ -173,6 +175,7 @@ class B1500():
         channels = test_tuple.channels
         exc = None
         data = None
+        num_meas = len([c for c in channels if c.measurement])
         XE_measurement=any([c.measurement and c.measurement.mode in(
             MeasureModes.spot,
             MeasureModes.staircase_sweep,
@@ -211,7 +214,7 @@ class B1500():
                 self._SPGU_wait()
         elif search:
             self.write("XE")
-        parsed_data = self.__parse_output(test_tuple.format, data) if data else data
+        parsed_data = self.__parse_output(test_tuple.format, data, num_meas, self.__TSC) if data else data
         return (exc,parsed_data)
 
     def check_settings(self, parameter):
@@ -808,23 +811,14 @@ to annotate error codes will come in a future release")
                 results.append(ret)
         return results
 
-    def __parse_output(self, test_format, output):
+    def __parse_output(self, test_format, output, num_measurements, timestamp):
         try:
             if test_format in (Format.binary4, Format.binary4_crl):
                 return parse_binary4(output)
             elif test_format in (Format.binary8, Format.binary8,):
                 return parse_binary8(output)
-            terminator = getTerminator(test_format)
-            lines = [x for x in output.split(terminator) if x]
-            num_vals = len(lines[0].split(","))
-            if hasHeader(test_format):
-                header = splitHeader(lines)
-                dtypes = {"names": header,"formats": [np.float]*len(header)}
-                lines= (tuple([x.replace(h,"").lower() for x,h in zip(line.split(","), header)]) for line in lines)
-                return np.fromiter(lines, dtype=dtypes)
             else:
-                lines= (tuple([x.lower() for x in line.split(",")] for line in lines))
-                return np.fromiter(lines,dtype=np.float)
+                return parse_ascii(test_format, output ,num_measurements, timestamp)
         except Exception as e:
             exception_logger.warn(e)
             return output
