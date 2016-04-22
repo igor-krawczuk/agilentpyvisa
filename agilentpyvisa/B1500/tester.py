@@ -60,6 +60,13 @@ class B1500():
         if auto_init:
             self.init()
 
+    def close(self):
+        self._device.close()
+        self._device=None
+
+    def __del__(self):
+        self.close()
+
     def init(self):
         """ Resets the connected tester, then checks all installed modules,
         querying their types and the available subchannels. It also
@@ -95,6 +102,7 @@ class B1500():
         retval=[]
         if self._recording and any([x in msg for x in self.__no_store]):
             self.programs[self.last_program]["config_nostore"].append(msg)
+            exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
         else:
             retval = self._device.query(msg, delay=delay)
             query_logger.info(str(retval)+"\n")
@@ -110,6 +118,7 @@ class B1500():
         write_logger.info(msg)
         if self._recording and any([x in msg for x in self.__no_store]):
             self.programs[self.last_program]["config_nostore"].append(msg)
+            exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
         else:
             retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
@@ -728,18 +737,21 @@ to annotate error codes will come in a future release")
 
     def _check_err(self, all=False):
         """ check for single error, or all errors in stack"""
-        query = "ERRX?"
-        ret = self._device.query(query)
-        if all:
-            results = []
-            while ret[:2]!='+0':
+            query = "ERRX?"
+        if not self._recording:
+            ret = self._device.query(query)
+            if all:
+                results = []
+                while ret[:2]!='+0':
+                    exception_logger.warn(ret)
+                    results.append(ret)
+                    ret = self._device.query(query)
+                return results
+            if ret[:2]!='+0':
                 exception_logger.warn(ret)
-                results.append(ret)
-                ret = self._device.query(query)
-            return results
-        if ret[:2]!='+0':
-            exception_logger.warn(ret)
-        return ret
+            return ret
+        else:
+            exception.warn("Skipped query \"{}\" since it is not allowed while recording".format(query))
 
     def _zero_channel(self, channel):
         """ Force Channel voltage to zero, saving previous parameters"""
@@ -784,18 +796,17 @@ to annotate error codes will come in a future release")
             return ret
 
     def _read_sweep(self, channels):
+        results = []
         for c in channels:
             if isinstance(c.measurement,StaircaseSweep):
-                results = []
-                for i in range(test_tuple.measurement.steps):
-                    for i in range(10):  # retry 10 times when failing
-                        try:
-                            ret = self.read()
-                        except Exception:
-                            continue
-                        break
-                    results.append(ret)
-                return results
+                for i in range(10):  # retry 10 times when failing
+                    try:
+                        ret = self.read()
+                    except Exception:
+                        continue
+                    break
+                results.append(ret)
+        return results
 
     def __parse_output(self, test_format, output):
         try:
