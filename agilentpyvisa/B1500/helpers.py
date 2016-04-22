@@ -97,11 +97,13 @@ def getFields(num_fields, lines):
         fields.append(x.split(sign)[0])
     return fields
 
-def parse_ascii(test_format, output , num_measure, timestamp):
+def parse_ascii(test_format, output , num_measure, timestamp, outputmode):
     terminator = getTerminator(test_format)
     lines = [x.split(",") for x in output.split(terminator) if x]
     lines=list(chain.from_iterable(lines))
     num_fields = num_measure if not timestamp else num_measure+1
+    if "with_" in repr(outputmode):
+        num_fields += 1
     dtypes = np.float
     if hasHeader(test_format):
         fields = getFields(num_fields, lines)

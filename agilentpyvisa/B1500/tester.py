@@ -810,7 +810,7 @@ to annotate error codes will come in a future release")
             elif test_format in (Format.binary8, Format.binary8,):
                 return parse_binary8(output)
             else:
-                return parse_ascii(test_format, output ,num_measurements, timestamp)
+                return parse_ascii(test_format, output ,num_measurements, timestamp, self.__format)
         except Exception as e:
             exception_logger.warn(e)
             return output
