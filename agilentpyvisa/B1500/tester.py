@@ -800,17 +800,8 @@ to annotate error codes will come in a future release")
             return ret
 
     def _read_sweep(self, channels):
-        results = []
-        for c in channels:
-            if isinstance(c.measurement,StaircaseSweep):
-                for i in range(10):  # retry 10 times when failing
-                    try:
-                        ret = self.read()
-                    except Exception:
-                        continue
-                    break
-                results.append(ret)
-        return results
+        self.query("NUB?")
+        return self.read()
 
     def __parse_output(self, test_format, output, num_measurements, timestamp):
         try:
