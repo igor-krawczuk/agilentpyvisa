@@ -2,7 +2,7 @@ from .enums import MeasureRanges_I, InputRanges_I, InputRanges_V
 from .enums import MeasureRanges_V, MeasureModes, Format
 from logging import getLogger
 exception_logger = getLogger(__name__+":ERRORS")
-from itertools import cycle, starmap, compress
+from itertools import cycle, starmap, compress, chain
 import pandas as pd
 import numpy as np
 
@@ -99,7 +99,8 @@ def getFields(num_fields, lines):
 
 def parse_ascii(test_format, output , num_measure, timestamp):
     terminator = getTerminator(test_format)
-    lines = [x for x in output.split(terminator) if x]
+    lines = [x.split(",") for x in output.split(terminator) if x]
+    lines=list(chain.from_iterable(lines))
     num_fields = num_measure if not timestamp else num_measure+1
     dtypes = np.float
     if hasHeader(test_format):
