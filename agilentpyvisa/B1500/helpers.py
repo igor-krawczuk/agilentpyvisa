@@ -5,6 +5,7 @@ exception_logger = getLogger(__name__+":ERRORS")
 from itertools import cycle, starmap, compress, chain
 import pandas as pd
 import numpy as np
+from .enums import OutputMode
 
 
 def availableInputRanges(model):
@@ -102,7 +103,7 @@ def parse_ascii(test_format, output , num_measure, timestamp, outputmode):
     lines = [x.split(",") for x in output.split(terminator) if x]
     lines=list(chain.from_iterable(lines))
     num_fields = num_measure if not timestamp else num_measure+1
-    if "with_" in repr(outputmode):
+    if outputmode in (OutputMode.with_primarysource, OutputMode.with_synchronoussource):
         num_fields += 1
     dtypes = np.float
     if hasHeader(test_format):
