@@ -43,7 +43,7 @@ class TestSetup(namedtuple('__TestSetup',
         adc_modes=[], format=Format.ascii12_with_header_crl,
         output_mode=OutputMode.dataonly, filter=Filter.disabled,spgu_selector_setup=[]):
         # add default values
-        num_mes= len(set([c.measurement for c in channels if c.measurement]))
+        num_mes= len(set([c.measurement.mode for c in channels if c.measurement]))
         if any([x.spgu for x in channels]) and not spgu_selector_setup:
             raise ValueError("If you do want to use the spgu, you need to configure the SMUSPGU selector. supply a list of (port, state) tuples to spgu_selector_setup keyword")
         if num_mes>1:

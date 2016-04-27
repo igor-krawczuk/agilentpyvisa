@@ -296,7 +296,7 @@ class B1500():
         try:
             measurechannels = [c for c in test_tuple.channels if c.measurement]
             measurements = [c.measurement for c in measurechannels]
-            if len(set(measurements))>1:
+            if len(set([m.mode for m in measurements]))>1:
                 raise ValueError("Only 1 type of measurements allowed per setup, have {}".format(set(measurements)))
             if len(measurements)>1:
                 if all([m.mode in (MeasureModes.spot, MeasureModes.staircase_sweep, MeasureModes.CV_sweep_dc_bias,MeasureModes.sampling) for m in measurements]):
