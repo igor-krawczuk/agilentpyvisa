@@ -761,11 +761,16 @@ to annotate error codes will come in a future release")
         query = "*RST"
         return self.write(query)
 
-    def _check_err(self, all=False):
+    def _check_err(self, all=False, wait_for_error=True):
         """ check for single error, or all errors in stack"""
         query = "ERRX?"
         if not self._recording:
+
+            old_timeout = self._device.timeout
+            if wait_for_error:
+                self._device.timeout=None
             ret = self._device.query(query)
+            self._device.timeout=old_timeout
             if all:
                 results = []
                 while ret[:2]!='+0':
