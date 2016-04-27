@@ -30,6 +30,7 @@ from .loggers import exception_logger,write_logger, query_logger
 class B1500():
     def __init__(self, tester, auto_init=True, default_check_err=True):
         self.__test_addr = tester
+        self._device=None
         self.tests = OrderedDict()
         self.__last_channel_setups={}
         self.__last_channel_measurements={}
