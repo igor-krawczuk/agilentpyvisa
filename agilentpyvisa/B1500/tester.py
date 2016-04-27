@@ -656,6 +656,9 @@ to annotate error codes will come in a future release")
             else:
                 raise ValueError("Unknown Measuremode")
 
+    def clear_buffer(self):
+        return self.write("BC")
+
     def set_filter_all(self, filter_state, force_new_setup=False):
         """ Sets the spike and overshoot filter on the SMU output."""
         if self.__filter_all==filter_state and not force_new_setup:
