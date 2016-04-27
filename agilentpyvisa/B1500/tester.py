@@ -58,6 +58,8 @@ class B1500():
     def close(self):
         if self._device:
             self._device.close()
+            self.__rm.close()
+            self.__rm=None
             self._device=None
             self.__keep_open = False
 
