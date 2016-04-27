@@ -831,7 +831,9 @@ to annotate error codes will come in a future release")
             elif test_format in (Format.binary8, Format.binary8,):
                 return parse_binary8(output)
             else:
-                return parse_ascii(test_format, output ,num_measurements, timestamp, self.__outputMode)
+                frame,series_dict= parse_ascii_default_dict(test_format, output)
+                return (frame,series_dict,output)
+                #return parse_ascii(test_format, output ,num_measurements, timestamp, self.__outputMode)
         except Exception as e:
             exception_logger.warn(e)
             return output

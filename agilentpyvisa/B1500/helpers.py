@@ -6,6 +6,7 @@ from itertools import cycle, starmap, compress, chain
 import pandas as pd
 import numpy as np
 from .enums import OutputMode
+from collections import defaultdict
 
 
 def availableInputRanges(model):
@@ -118,6 +119,16 @@ def parse_ascii(test_format, output , num_measure, timestamp, outputmode, num_fo
         lines= (tuple([x.lower() for x in line.split(",")] for line in lines))
         filtered_arr = np.fromiter(lines,dtype=np.float)
     return pd.DataFrame(filtered_arr)
+
+def parse_ascii_default_dict(test_format, output):
+    terminator = getTerminator(test_format)
+    lines = [x.split(",") for x in output.split(terminator) if x]
+    lines=(chain.from_iterable(lines))
+    data_dict = defaultdict(list)
+    for l in lines:
+        data_dict[l[:3]].append(l[3:])
+    series_dict = dict([(k, pd.Series(v)) for k,v in data_dict.items()])
+    return (pd.DataFrame(series_dict),series_dict)
 
 
 """ postpose binary parsing for now
