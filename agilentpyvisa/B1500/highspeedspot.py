@@ -1,5 +1,4 @@
-from logging import getLogger
-exception_logger = getLogger(__name__+":ERRORS")
+from .loggers import exception_logger,write_logger, query_logger
 from .enums import *
 from .force import *
 from .helpers import format_command

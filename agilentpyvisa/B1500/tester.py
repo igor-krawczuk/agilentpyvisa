@@ -20,24 +20,16 @@ from .measurement import (
                           )
 from .setup import *
 from .helpers import *
-from logging import getLogger
 from .SMUs import *
 from .dummy import DummyTester
+from .loggers import exception_logger,write_logger, query_logger
 
 
-query_logger = getLogger(__name__+":query")
-write_logger = getLogger(__name__+":write")
-exception_logger = getLogger(__name__+":ERRORS")
 
 
 class B1500():
     def __init__(self, tester, auto_init=True, default_check_err=True):
-        try:
-            self.__rm = visa.ResourceManager()
-            self._device = self.__rm.open_resource(tester)
-        except OSError as e:
-            exception_logger.warn("Could not find VISA driver, setting _device to std_out")
-            self._device = DummyTester()
+        self.__test_addr = tester
         self.tests = OrderedDict()
         self.__last_channel_setups={}
         self.__last_channel_measurements={}
@@ -67,6 +59,7 @@ class B1500():
         if self._device:
             self._device.close()
             self._device=None
+            self.__keep_open = False
 
     def __del__(self):
         self.close()
@@ -77,6 +70,7 @@ class B1500():
         stores the available input and measure_ranges in the slots_installed dict,
         with the slot number as key. sub channels is a list containing
         all available channels"""
+        self.open()
         self._reset()
         self.slots_installed = self.__discover_slots()
         self.sub_channels = []
@@ -85,6 +79,17 @@ class B1500():
         self.__channels = {i:self.slots_installed[self.__channel_to_slot(i)] for i in self.sub_channels}
         self.enable_SMUSPGU()
         self._check_err()
+        self.close()
+
+    def open(self, keep_open=False):
+        if not self._device:
+            try:
+                self.__rm = visa.ResourceManager()
+                self._device = self.__rm.open_resource(self.__test_addr)
+                self.__keep_open =True
+            except OSError as e:
+                exception_logger.warn("Could not find VISA driver, setting _device to std_out")
+                self._device = DummyTester()
 
     def diagnostics(self, item):
         """ from the manual:
@@ -108,12 +113,15 @@ class B1500():
             self.programs[self.last_program]["config_nostore"].append(msg)
             exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
         else:
+            self.open()
             retval = self._device.query(msg, delay=delay)
             query_logger.info(str(retval)+"\n")
             err =self._check_err()
             if err[:2]!="+0":
                 exception_logger.warn(err)
                 exception_logger.warn(msg)
+            if  not self.__keep_open:
+                self.close()
         return retval
 
     def write(self, msg, check_error=False):
@@ -124,6 +132,7 @@ class B1500():
             self.programs[self.last_program]["config_nostore"].append(msg)
             exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
         else:
+            self.open()
             retval = self._device.write(msg)
         write_logger.info(str(retval)+"\n")
         if check_error or self.default_check_err:
@@ -131,12 +140,15 @@ class B1500():
             if err[:2]!="+0":
                 exception_logger.warn(err)
                 exception_logger.warn(msg)
+            if  not self.__keep_open:
+                self.close()
         return retval
 
     def read(self, check_error=False, lines=1):
         """ Reads out the current output buffer and logs it to the query logger
         optionally checking for errors"""
         retval=None
+        self.open()
         if "ascii" in repr(self.__format):
             retval = self._device.read()
         elif "binary4" in reps(self.__format):
@@ -168,6 +180,8 @@ class B1500():
         query_logger.info(str(retval)+"\n")
         if check_error:
             exception_logger.info(self._check_err())
+        if  not self.__keep_open:
+            self.close()
         return retval
 
     def measure(self, test_tuple, force_wait=False, autoread=False):
@@ -283,6 +297,7 @@ class B1500():
         setups up parameters, channels and measurements accordingly and then performs the specified test,
         returning gathered data if auto_read was specified. Allways
         cleans up any opened channels after being run (forces zero and disconnect)"""
+        self.open(keep_open=True)
         old_default=self.default_check_err
         if default_errcheck is not None:
             self.default_check_err=default_errcheck
@@ -329,6 +344,7 @@ class B1500():
                 for p,s in test_tuple.spgu_selector_setup:
                     self.set_SMUSPGU_selector(p, SMU_SPGU_state.open_relay)
             self.default_check_err=old_default
+            self.close()
         return ret
 
     def _Pulsed_Spot(self, target, input_channel, ground_channel, base, pulse, width,compliance,input_range=None,measure_range=MeasureRanges_V.full_auto, hold=0 ):

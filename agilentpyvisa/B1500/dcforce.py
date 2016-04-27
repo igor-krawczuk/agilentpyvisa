@@ -1,6 +1,5 @@
-from logging import getLogger
 from .helpers import format_command
-exception_logger = getLogger(__name__+":ERRORS")
+from .loggers import exception_logger,write_logger, query_logger
 from .enums import *
 
 class DCForceUnit(object):
