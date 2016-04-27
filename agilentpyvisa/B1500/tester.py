@@ -46,7 +46,6 @@ class B1500():
         self.programs={}
         self.__format = None
         self.__outputMode = None
-        self._device.read_terminator = None
         self.last_program=None
         self.__no_store=("*RST","DIAG?","*TST?","CA","AB","RCV","WZ?","ST","END",
                          "SCR","VAR","LST?","CORRSER?","SER?","SIM?","SPM?",
@@ -708,7 +707,6 @@ to annotate error codes will come in a future release")
         """ Specifies output mode and format to use for testing. Check
         Formats enum for more details"""
         if not (self.__format == format and self.__outputMode == output_mode) or force_new_setup :
-            self._device.read_terminator=getTerminator(format)
             self.__format = format
             self.__outputMode = output_mode
             self.write("FMT {},{}".format(format, output_mode))
