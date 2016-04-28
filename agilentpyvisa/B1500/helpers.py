@@ -126,7 +126,7 @@ def parse_ascii_default_dict(test_format, output):
     lines=(chain.from_iterable(lines))
     data_dict = defaultdict(list)
     for l in lines:
-        data_dict[l[:3]].append(l[3:])
+        data_dict[l[:3]].append(np.float(l[3:].lower()))
     series_dict = dict([(k, pd.Series(v)) for k,v in data_dict.items()])
     return (pd.DataFrame(series_dict),series_dict)
 
