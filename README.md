@@ -13,24 +13,28 @@ It is very much a work in progress and not stable at all. It is also missing a l
 
 When I write one off scripts, I like the code to be self documenting. The bulk of the work so far has been creating classes,Enums and namedtuples to make sure there are no magic numbers or cryptic commands, at the expense of more typing. But that is what ipython tabcompletion is for.
 
+I also would have liked some faster failing and meaningful error messages from the tester, so I tried to implement that as well.
+
 I went through a lot of trial and error with the documentation, as it is not quite what I would call intuitive. My lack of understanding of the system also shows in the commit history (as well as the fact that I use this repo to get it on the testing machine). But hey, now you don't have to go through all that pain! Just use the library :-)
 
-I will continue working on this library as I go, ideally making it feature complete and a bit faster. But since this all boils down to string wrangling, I won't invest too much time into performance. Most of the low level commands have been reworked in so they can be used manually in a more traditional script, which will probably be the fastest you can get with this. The rest will soon follow.
+I will continue working on this library as I go, ideally making it feature complete.
 # Status
-## What works 100% right now
+## What works right now
 
-Nothing. WIP = Work In Progress, feel free to file any issues should you encounter problems. I will try respond as much as I can given my time.
+* StaircaseSweep, Spot Measurements
+* Optional automatic error polling
+* Controlling the 16440A SMU-SPGU Controller
 
 ## What mostly works right now
 
-* Spot,  StaircaseSweep, PulsedSweep, PulsedSpot, SPGU, DCForce, BinarySearch, LinearSearch
+*  PulsedSweep, PulsedSpot, SPGU, DCForce, BinarySearch, LinearSearch
 * Most of these have validations on creation of the configuration tuples which tell you what to do, give you the alllowable ranges should you exceed them etc
-* Optional automatic error polling
-* Optional automatic conversion of measurement data into numpy array
-* Controlling the 16440A SMU-SPGU Controller
 * Verbose namedtuples and IntEnums for self documenting code, but with the option to still handcode your tests (i.e., use "DV 0,{},{}".format(InputRange.full_auto, 5" to force 5 Volt with automatic input ranging, or write tester.set_highspeed_adc(0,0) == "AV 0,0" if you know which int means what)
-* ASCII data format
 * Recording setups as programs to speed up testing, keeping track of them in the tester object
+
+## What does not yet work, but will soon
+* ASCII data format
+* Optional automatic conversion of measurement data into numpy array
 
 ## What does not yet work, but I might add soon, given time
 * binary data format
@@ -90,3 +94,6 @@ It will also error out if you try to set input or measuring ranges outside the S
 b.slots_installed[2].get_mincover_I(0.5)
 #=> returns the Enum value for the minimum covering range on this unit, fullauto if it doesn't find anything
 ```
+ # Notes
+
+* when forcing 0V in ground, don't set compliance to 0. The tester will actively regulate current flow in that node to 0, NOT just keep current flowing from the tester into the node to 0
