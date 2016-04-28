@@ -787,7 +787,9 @@ to annotate error codes will come in a future release")
 
     def _zero_channel(self, channel):
         """ Force Channel voltage to zero, saving previous parameters"""
-        self.write("DZ {}".format(channel))
+        return self.write("DZ {}".format(channel))
+    def _idle_channel(self, channel)
+        return self.write(format_command("IN",channel))
 
     def _close_channel(self, channel):
         """ Disconnect channel"""
@@ -804,7 +806,7 @@ to annotate error codes will come in a future release")
         """ Force Channel to zero and then disconnect """
         if channel.number not in self.sub_channels:
             exception_logger.warn("No channel {} installed, only have \n{}\n, proceeding with teardown but call check_err and verify your setup".format(channel, self.sub_channels))
-        self._zero_channel(channel.number)
+        self._idle_channel(channel.number)
         self._close_channel(channel.number)
 
     # methods only used in discovery,intended to be used only by via public calls,
