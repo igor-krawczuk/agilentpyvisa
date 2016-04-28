@@ -92,6 +92,9 @@ class B1500():
                 self.__keep_open =True
             except OSError as e:
                 exception_logger.warn("Could not find VISA driver, setting _device to std_out")
+                self.__rm.close()
+                self._device.close()
+                self.__rm = None
                 self._device = DummyTester()
 
     def diagnostics(self, item):
@@ -117,32 +120,36 @@ class B1500():
             exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
         else:
             self.open()
-            retval = self._device.query(msg, delay=delay)
-            query_logger.info(str(retval)+"\n")
-            err =self._check_err()
-            if err[:2]!="+0":
-                exception_logger.warn(err)
-                exception_logger.warn(msg)
-            if  not self.__keep_open:
-                self.close()
+            try:
+                retval = self._device.query(msg, delay=delay)
+                query_logger.info(str(retval)+"\n")
+                err =self._check_err()
+                if err[:2]!="+0":
+                    exception_logger.warn(err)
+                    exception_logger.warn(msg)
+            finally:
+                if  not self.__keep_open:
+                    self.close()
         return retval
 
     def write(self, msg, check_error=False):
         """ Writes the msg to the Tester and logs it in the write
         logger.Optionally checks for errors afterwards"""
         write_logger.info(msg)
-        if self._recording and any([x in msg for x in self.__no_store]):
-            self.programs[self.last_program]["config_nostore"].append(msg)
-            exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
-        else:
-            self.open()
-            retval = self._device.write(msg)
-        write_logger.info(str(retval)+"\n")
-        if check_error or self.default_check_err:
-            err =self._check_err()
-            if err[:2]!="+0":
-                exception_logger.warn(err)
-                exception_logger.warn(msg)
+        try:
+            if self._recording and any([x in msg for x in self.__no_store]):
+                self.programs[self.last_program]["config_nostore"].append(msg)
+                exception_logger.warn("Skipped query '{}' since not allowed while recording".format(msg))
+            else:
+                self.open()
+                retval = self._device.write(msg)
+            write_logger.info(str(retval)+"\n")
+            if check_error or self.default_check_err:
+                err =self._check_err()
+                if err[:2]!="+0":
+                    exception_logger.warn(err)
+                    exception_logger.warn(msg)
+        finally:
             if  not self.__keep_open:
                 self.close()
         return retval
@@ -152,39 +159,41 @@ class B1500():
         optionally checking for errors"""
         retval=None
         self.open()
-        if "ascii" in repr(self.__format):
-            retval = self._device.read()
-        elif "binary4" in reps(self.__format):
-            retval = self._device.read_raw()
-        elif "binary8" in reps(self.__format):
-            retval = self._device.read_raw()
-        else:
-            raise ValueError("Unkown format {0}".format(self.__format))
-        if lines>1:
-            retval=[retval]
-            for i in range(1,lines):
-                try:
-                    if "ascii" in repr(self.__format):
-                        retval = self._device.read()
-                    elif "binary4" in reps(self.__format):
-                        retval = self._device.read_raw()
-                    elif "binary8" in reps(self.__format):
-                        retval = self._device.read_raw()
-                    else:
-                        raise ValueError("Unkown format {0}".format(self.__format))
-                except Exception as e:
-                    exception_logger.warn("Read error after {} lines".format(i))
-                    raise e
-                finally:
-                    query_logger.info(str(retval)+"\n")
-                    if check_error:
-                        exception_logger.info(self._check_err())
-                    return retval
-        query_logger.info(str(retval)+"\n")
-        if check_error:
-            exception_logger.info(self._check_err())
-        if  not self.__keep_open:
-            self.close()
+        try:
+            if "ascii" in repr(self.__format):
+                retval = self._device.read()
+            elif "binary4" in reps(self.__format):
+                retval = self._device.read_raw()
+            elif "binary8" in reps(self.__format):
+                retval = self._device.read_raw()
+            else:
+                raise ValueError("Unkown format {0}".format(self.__format))
+            if lines>1:
+                retval=[retval]
+                for i in range(1,lines):
+                    try:
+                        if "ascii" in repr(self.__format):
+                            retval = self._device.read()
+                        elif "binary4" in reps(self.__format):
+                            retval = self._device.read_raw()
+                        elif "binary8" in reps(self.__format):
+                            retval = self._device.read_raw()
+                        else:
+                            raise ValueError("Unkown format {0}".format(self.__format))
+                    except Exception as e:
+                        exception_logger.warn("Read error after {} lines".format(i))
+                        raise e
+                    finally:
+                        query_logger.info(str(retval)+"\n")
+                        if check_error:
+                            exception_logger.info(self._check_err())
+                        return retval
+            query_logger.info(str(retval)+"\n")
+            if check_error:
+                exception_logger.info(self._check_err())
+        finally:
+            if  not self.__keep_open:
+                self.close()
         return retval
 
     def measure(self, test_tuple, force_wait=False, autoread=False):
@@ -788,7 +797,8 @@ to annotate error codes will come in a future release")
     def _zero_channel(self, channel):
         """ Force Channel voltage to zero, saving previous parameters"""
         return self.write("DZ {}".format(channel))
-    def _idle_channel(self, channel)
+
+    def _idle_channel(self, channel):
         return self.write(format_command("IN",channel))
 
     def _close_channel(self, channel):
