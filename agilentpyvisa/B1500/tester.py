@@ -568,7 +568,7 @@ to annotate error codes will come in a future release")
         the acutal measurement or without any measurement at all"""
         unit = self.__channels[channel.number]
         unit.connect(channel.number)
-        if  self.__last_channel_setups.get(unit)==channel or not force_new_setup:
+        if  self.__last_channel_setups.get(unit)==channel and not force_new_setup:
             # restore voltage settings to channel
             unit.restore(channel.number)
             exception_logger.warn("Channel configuration for channel {} has not changed, using old setup".format(channel.number))
