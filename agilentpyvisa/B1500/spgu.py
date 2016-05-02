@@ -123,7 +123,7 @@ class SPGUSMU(object):
     def wait_spgu(self):
         """ Queries SPGU and blocks until it has finished pulsing"""
         self.busy = 1
-        while busy == 1:
+        while self.busy == 1:
             self.busy = self.parent.query("SPST?")
         return busy
 

@@ -154,11 +154,14 @@ class B1500():
                 self.close()
         return retval
 
-    def read(self, check_error=False, lines=1):
+    def read(self, check_error=False, timeout="default" ):
         """ Reads out the current output buffer and logs it to the query logger
         optionally checking for errors"""
         retval=None
         self.open()
+        old_timeout = self._device.timeout
+        if timeout != "default":
+            self._device.timeout
         try:
             if "ascii" in repr(self.__format):
                 retval = self._device.read()
@@ -168,27 +171,6 @@ class B1500():
                 retval = self._device.read_raw()
             else:
                 raise ValueError("Unkown format {0}".format(self.__format))
-            if lines>1:
-                retval=[retval]
-                for i in range(1,lines):
-                    try:
-                        if "ascii" in repr(self.__format):
-                            retval = self._device.read()
-                        elif "binary4" in reps(self.__format):
-                            retval = self._device.read_raw()
-                        elif "binary8" in reps(self.__format):
-                            retval = self._device.read_raw()
-                        else:
-                            raise ValueError("Unkown format {0}".format(self.__format))
-                    except Exception as e:
-                        exception_logger.warn("Read error after {} lines".format(i))
-                        raise e
-                    finally:
-                        query_logger.info(str(retval)+"\n")
-                        if check_error:
-                            exception_logger.info(self._check_err())
-                        return retval
-            query_logger.info(str(retval)+"\n")
             if check_error:
                 exception_logger.info(self._check_err())
         finally:
@@ -239,7 +221,7 @@ class B1500():
             for x in spgu_channels:
                 self.__channels[x].start_pulses()
             if force_wait:
-                self._SPGU_wait()
+                self.__channels[x].wait_spgu()
         elif search:
             self.write("XE")
         parsed_data = self.__parse_output(test_tuple.format, data, num_meas, self.__TSC) if data else data
@@ -586,7 +568,11 @@ to annotate error codes will come in a future release")
         the acutal measurement or without any measurement at all"""
         unit = self.__channels[channel.number]
         unit.connect(channel.number)
-        if  not self.__last_channel_setups.get(unit)==channel or force_new_setup:
+        if  self.__last_channel_setups.get(unit)==channel or not force_new_setup:
+            # restore voltage settings to channel
+            unit.restore(channel.number)
+            exception_logger.warn("Channel configuration for channel {} has not changed, using old setup".format(channel.number))
+        else:
             self.__last_channel_setups[unit]=channel
             if not channel.spgu:
                 unit.set_series_resistance(channel.series_resistance,channel.number)
@@ -621,8 +607,6 @@ to annotate error codes will come in a future release")
                     errors.append(ret)
                     ret=self._check_err()
                 return errors
-        else:
-            exception_logger.warn("Channel configuration for channel {} has not changed, skiping setup".format(channel.number))
     def set_measure_mode(self,mode,*channels):
         """ Defines which measurement to perform on the channel. Not used for all measurements,
         check enums.py  or MeasureModes for a full list of measurements. Not in SMUs because for parallel measurements, need to set all channels at once"""
@@ -771,14 +755,13 @@ to annotate error codes will come in a future release")
         query = "*RST"
         return self.write(query)
 
-    def _check_err(self, all=False, wait_for_error=True):
+    def _check_err(self, all=False, timeout=20000):
         """ check for single error, or all errors in stack"""
         query = "ERRX?"
         if not self._recording:
 
             old_timeout = self._device.timeout
-            if wait_for_error:
-                self._device.timeout=None
+            self._device.timeout=timeout
             ret = self._device.query(query)
             self._device.timeout=old_timeout
             if all:
