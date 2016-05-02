@@ -125,7 +125,7 @@ class SPGUSMU(object):
         self.busy = 1
         while self.busy == 1:
             self.busy = self.parent.query("SPST?")
-        return busy
+        return self.busy
 
     def setup_spgu(self, channel, spgu_setup):
         """ Creates the specified spgu setup for the given channel. For more detials about the setup look at the SPGU IntEnum"""
