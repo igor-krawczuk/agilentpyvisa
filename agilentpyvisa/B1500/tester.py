@@ -618,39 +618,37 @@ to annotate error codes will come in a future release")
         Parameters Concerning the channel setup are handled in the respective
         setup_X functions, this function and its callees are only concerned with
         the measurements themselves."""
-        if  not self.__last_channel_measurements.get(channel_number)==measurement or force_new_setup:
-            self.__last_channel_measurements[channel_number]=measurement
-            if measurement.mode in [
-                MeasureModes.spot,
-                MeasureModes.staircase_sweep,
-                MeasureModes.sampling,
-                MeasureModes.multi_channel_sweep,
-                MeasureModes.CV_sweep_dc_bias,
-                MeasureModes.multichannel_pulsed_spot,
-                MeasureModes.multichannel_pulsed_sweep,
-                MeasureModes.pulsed_spot,
-                MeasureModes.pulsed_sweep,
-                MeasureModes.staircase_sweep_pulsed_bias,
-                MeasureModes.quasi_pulsed_spot,
-            ]:
-                self.__channels[channel_number]._setup_xe_measure(measurement,channel=channel_number )
-            elif measurement.mode in [
-                MeasureModes.spot_C,
-                MeasureModes.pulsed_spot_C,
-                MeasureModes.pulsed_sweep_CV,
-                MeasureModes.sweep_Cf,
-                MeasureModes.sweep_CV_ac_level,
-                MeasureModes.sampling_Ct,
-            ]:
-                raise NotImplemented("CapacitanceMeasurement not yet implemented")
-            elif measurement.mode == MeasureModes.quasi_static_cv:
-                raise NotImplemented("QuasistatiCV measurement not yet implemented")
-            elif measurement.mode ==MeasureModes.binary_search:
-                self.__channels[channel_number].setup_binarysearch_measure(measurement,channel=channel_number )
-            elif measurement.mode==MeasureModes.linear_search:
-                self.__channels[channel_number].setup_linearsearch_measure(measurement,channel=channel_number )
-            else:
-                raise ValueError("Unknown Measuremode")
+        if measurement.mode in [
+            MeasureModes.spot,
+            MeasureModes.staircase_sweep,
+            MeasureModes.sampling,
+            MeasureModes.multi_channel_sweep,
+            MeasureModes.CV_sweep_dc_bias,
+            MeasureModes.multichannel_pulsed_spot,
+            MeasureModes.multichannel_pulsed_sweep,
+            MeasureModes.pulsed_spot,
+            MeasureModes.pulsed_sweep,
+            MeasureModes.staircase_sweep_pulsed_bias,
+            MeasureModes.quasi_pulsed_spot,
+        ]:
+            self.__channels[channel_number]._setup_xe_measure(measurement,channel=channel_number )
+        elif measurement.mode in [
+            MeasureModes.spot_C,
+            MeasureModes.pulsed_spot_C,
+            MeasureModes.pulsed_sweep_CV,
+            MeasureModes.sweep_Cf,
+            MeasureModes.sweep_CV_ac_level,
+            MeasureModes.sampling_Ct,
+        ]:
+            raise NotImplemented("CapacitanceMeasurement not yet implemented")
+        elif measurement.mode == MeasureModes.quasi_static_cv:
+            raise NotImplemented("QuasistatiCV measurement not yet implemented")
+        elif measurement.mode ==MeasureModes.binary_search:
+            self.__channels[channel_number].setup_binarysearch_measure(measurement,channel=channel_number )
+        elif measurement.mode==MeasureModes.linear_search:
+            self.__channels[channel_number].setup_linearsearch_measure(measurement,channel=channel_number )
+        else:
+            raise ValueError("Unknown Measuremode")
 
     def clear_buffer(self):
         return self.write("BC")
