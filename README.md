@@ -98,7 +98,7 @@ b.slots_installed[2].get_mincover_I(0.5)
 #=> returns the Enum value for the minimum covering range on this unit, fullauto if it doesn't find anything
 ```
 
-# A more elaborate example, based on the test that I had to run personally
+# A more elaborate example, based on the test that I had to run personally. You can find a cleaner version in the [TestingToolbox.ipynb](TestingToolbox.ipynb)
 The goal is to use a transistor to provide finer compliance current limiting.
 First we do some initialization, which will reset the tester and make sure we know what is going on.
 
