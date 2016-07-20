@@ -34,7 +34,7 @@ query_logger.setLevel(logging.WARN)
 if not "tester_id" in globals():
     tester_id='GPIB1::17::INSTR'
     print("Setting 'tester_id' to {} and creating test_object b15 to be used in tests.\
-If you want to change this, set 'tester_id' globally and either reimport or recreate the b15 object")
+If you want to change this, set 'tester_id' globally and either reimport or recreate the b15 object".format(tester_id))
 else:
     print("found tester_id {}, creating b15 object with it".format(tester_id))
 
@@ -65,7 +65,7 @@ else:
     print("SMU3 found as value {}".format())
 
 if not "SMU4" in globals():
-    SMU2=5 # E
+    SMU4=5 # E
     print("Setting SMU4 to {}".format(SMU2))
 else:
     print("SMU4 found as value {}".format())
