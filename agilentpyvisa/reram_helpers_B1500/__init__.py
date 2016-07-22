@@ -201,7 +201,7 @@ class pattern_checkR(collections.namedtuple('_checkR', checkr_members)):
     def __new__(cls,after=None):
         return super().__new__(cls,after)
 
-def handle_pattern(p,print_check=False):
+def handle_pattern(p,CURRENT_SAMPLE,print_check=False):
     global SPGU_SELECTOR
     if isinstance(p,pattern_pulse):
         if not SPGU_SELECTOR=='SPGU':
@@ -210,12 +210,12 @@ def handle_pattern(p,print_check=False):
         pulse(p.voltage, p.width, slope=p.slope, gate=p.gate, gate_voltage=p.gateVoltage,loadZ=1e6,count=p.count )
         return p
     elif isinstance(p, pattern_checkR):
-        R=checkR()
+        R=checkR(CURRENT_SAMPLE)
         if print_check:
             print(R)
         return R
 
-def consume_patterns(job_patterns,time_est_every=100,print_check=False):
+def consume_patterns(CURRENT_SAMPLE,job_patterns,time_est_every=100,print_check=False):
     resp=[]
     est=None
     beginning=time.time()
@@ -234,7 +234,7 @@ def consume_patterns(job_patterns,time_est_every=100,print_check=False):
                          )
             start=time.time()
         try:
-            resp.append( (i,handle_pattern(p,print_check)))
+            resp.append( (i,handle_pattern(p,CURRENT_SAMPLE,print_check)))
         except BaseException as e:
             print(e)
             resp.append((i,e))
@@ -439,21 +439,20 @@ def pulse(p_v, width, slope, gate=SMU3, gate_voltage=1.85,ground=SMU2,loadZ=1e6,
     
     
 # some more concrete cases, with the defaults we use initially
-def read(start=200e-6,stop=250e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,
+def read(CURRENT_SAMPLE,start=200e-6,stop=250e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,
          gate=1.85, plot=True, print_R=True, stats=True):
     """
     A quick sweep to estimate the current Resistance of the DUT
     """
-    assert(CURRENT_SAMPLE,"Please define the global variable 'CURRENT_SAMPLE'")
     out = sweep(start=start,stop=stop,steps=steps,mrange=mrange,gate=gate,plot=plot,stats=stats)
     out.to_csv("{}_read_{}.csv".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), CURRENT_SAMPLE))
     return out
 
-def checkR(start=200e-6,stop=350e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,  gate=1.85):
+def checkR(CURRENT_SAMPLE, start=200e-6,stop=350e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,  gate=1.85):
     """
     Perform a read and calculate the mean, throw everything else away
     """
-    out= read(start=start,stop=stop, steps=steps,mrange=mrange,gate=gate, plot=False,stats=False)
+    out= read(CURRENT_SAMPLE,start=start,stop=stop, steps=steps,mrange=mrange,gate=gate, plot=False,stats=False)
     R= get_R(out)
     return R
 
