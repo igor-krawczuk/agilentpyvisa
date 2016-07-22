@@ -31,6 +31,8 @@ exception_logger.setLevel(logging.INFO)
 write_logger.setLevel(logging.INFO)
 query_logger.setLevel(logging.WARN)
 
+if not "CURRENT_SAMPLE" in globals():
+    print("Could not find current sample, please remember to set the global var")
 if not "tester_id" in globals():
     tester_id='GPIB1::17::INSTR'
     print("Setting 'tester_id' to {} and creating test_object b15 to be used in tests.\
@@ -442,8 +444,9 @@ def read(start=200e-6,stop=250e-6, steps=51,mrange=MeasureRanges_I.uA100_limited
     """
     A quick sweep to estimate the current Resistance of the DUT
     """
+    assert(CURRENT_SAMPLE,"Please define the global variable 'CURRENT_SAMPLE'")
     out = sweep(start=start,stop=stop,steps=steps,mrange=mrange,gate=gate,plot=plot,stats=stats)
-    out.to_csv("{}_read.csv".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S')))
+    out.to_csv("{}_read_{}.csv".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), CURRENT_SAMPLE))
     return out
 
 def checkR(start=200e-6,stop=350e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,  gate=1.85):
