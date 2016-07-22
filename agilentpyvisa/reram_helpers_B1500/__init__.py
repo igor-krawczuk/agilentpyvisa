@@ -174,13 +174,13 @@ def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_colu
         if t=='line':
             erax1.plot(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
             erax1.plot(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
-            erax2.plot(x[:half],out['R'][:half]/1000,color='r',marker='x')
-            erax2.plot(x[half:],out['R'][half:]/1000,color='r',marker='x')
+            erax2.plot(x[:half],out['R'][:half]/1000,color='c',marker='x')
+            erax2.plot(x[half:],out['R'][half:]/1000,color='m',marker='x')
         elif t=='scatter':
             erax1.scatter(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
             erax1.scatter(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
-            erax2.scatter(x[:half],out['R'][:half]/1000,color='r',marker='x')
-            erax2.scatter(x[half:],out['R'][half:]/1000,color='r',marker='x')
+            erax2.scatter(x[:half],out['R'][:half]/1000,color='c',marker='x')
+            erax2.scatter(x[half:],out['R'][half:]/1000,color='m',marker='x')
         erax1.set_ylabel("Total Energy consumed in mW")
         erax2.set_ylabel("Resistance in kOhm")
 
