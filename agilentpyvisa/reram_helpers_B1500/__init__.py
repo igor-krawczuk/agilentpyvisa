@@ -321,9 +321,31 @@ def get_series(numpulses,peak,width=1000e-6,slope=0.2,gateV=1.9,count=1):
     return [pattern_pulse(voltage=peak,width=width,slope=slope,gateVoltage=gateV,gate=SMU3,count=count) for _ in range(numpulses)]
 get_series(5,-1.5)
 
-def parse_job_results(results):
+def parse_job_results(results, annealing_data=None, form_data=None):
+    """
+    Parses the job results and the previous annealing and forming data into a single dataframe to be used for feature building.
+    form_data and annealing data are expected to be of a certain shape.
+    annealing_data = {anneal_run(int):anneal_data}
+    where anneal_data is has all of the keys in "child_dic_keys"
+    form_data is expected to be a dict with all of "form_keys"
+    """
+    if form_data:
+        form_keys=["FORM_V", "FORM_GATE"]
+        assert(all([k in form_data for k in form_keys]),"Ensure that form_data has keys {}".format(form_keys))
+    if annealing_data:
+        child_dic_keys=("RESET_HISTMAX", "SET_HISTMAX", "SET_V")
+        assert(all([isinstance(i,int) for k in annealing_data.keys()),"Ensure annealing data is a dict with only int as keys")
+        assert(all([all([k in dic for k in child_dic_keys]) for dic in annealing_data.values()]),"Ensure all child-dicts of annealing data have the following keys {}":format(child_dic_keys))
     res=[]
     proto = {'Resistance':None,'Voltage':None,'gateVoltage':None,'Type':None,'width':None,'slope':None}
+
+    if annealing_data:
+        for k in annealing_data.keys():
+            for k2,v in annealing_data.items():
+                proto["{}_{}".format(k,k2)]=v
+    if form_data:
+        for k,v in form_data.items():
+            proto[k]=v
     for i,r in results:
         p = proto.copy()
         if isinstance(r,float):
@@ -381,7 +403,7 @@ def find_set_V(d):
     jumpV = d.get_value(jumpstep, "EV")
     return jumpV
 
-def get_hyst(d):
+def get_hist(d):
     """ 
     Given a Sweep datum with EI and EV, calculate the difference between the first and second pass through a EV value, return as a dataframe of index, EV and R
     """
