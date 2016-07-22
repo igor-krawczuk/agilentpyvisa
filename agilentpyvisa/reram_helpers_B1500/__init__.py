@@ -31,8 +31,6 @@ exception_logger.setLevel(logging.INFO)
 write_logger.setLevel(logging.INFO)
 query_logger.setLevel(logging.WARN)
 
-if not "CURRENT_SAMPLE" in globals():
-    print("Could not find current sample, please remember to set the global var")
 if not "tester_id" in globals():
     tester_id='GPIB1::17::INSTR'
     print("Setting 'tester_id' to {} and creating test_object b15 to be used in tests.\
