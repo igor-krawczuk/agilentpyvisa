@@ -172,13 +172,13 @@ def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_colu
         if t=='line':
             erax1.plot(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
             erax1.plot(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
-            erax2.plot(x[:half],out['R'][:half]/1000,color='g',marker='x')
-            erax2.plot(x[half:],out['R'][half:]/1000,color='g',marker='x')
+            erax2.plot(x[:half],out['R'][:half]/1000,color='r',marker='x')
+            erax2.plot(x[half:],out['R'][half:]/1000,color='r',marker='x')
         elif t=='scatter':
             erax1.scatter(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
             erax1.scatter(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
-            erax2.scatter(x[:half],out['R'][:half]/1000,color='g',marker='x')
-            erax2.scatter(x[half:],out['R'][half:]/1000,color='g',marker='x')
+            erax2.scatter(x[:half],out['R'][:half]/1000,color='r',marker='x')
+            erax2.scatter(x[half:],out['R'][half:]/1000,color='r',marker='x')
         erax1.set_ylabel("Total Energy consumed in mW")
         erax2.set_ylabel("Resistance in kOhm")
 
@@ -369,12 +369,38 @@ reset_pulse_energy_estimate(-1.5,1,0.2)
 
 
 # base abstract procedures
+def find_set_V(d):
+    """
+    Given a sweep datum, tries to find the voltage at which the jump occurs
+    """
+    jumpstep=d["EI"].diff().abs().idxmax()
+    jumpV = d.get_value(jumpstep, "EV")
+    return jumpV
+
+def get_hyst(d):
+    """ 
+    Given a Sweep datum with EI and EV, calculate the difference between the first and second pass through a EV value, return as a dataframe of index, EV and R
+    """
+    if not "R" in d.columns:
+        d["R"]=d["EV"]/d["EI"]
+    half=d["EV"].abs().idxmax()
+    # get first half of EV; make sure we indice from 0 to half
+    d1=d[:half]
+    d1.index=range(half)
+
+    # same for second half, but flip so that the EV align
+    d2=d[half:]
+    d2.index=range(half)
+    d2=d2.iloc[::-1]
+    d2.index=range(half)
+    hist = d2-d1
+    # dataframe now contains positive R where the second pass had a larger resistance than the first
+    return hist[["EV","R"]]
+
 def add_resistance(d):
     out = d
     out["R"]=d["EV"]/d["EI"]
     return out
-
-
 
 def add_energy(datum):
     datum['cumulative_energy']=(datum['ET'].diff().fillna(0)*datum['EI']*datum['EV']).cumsum()
