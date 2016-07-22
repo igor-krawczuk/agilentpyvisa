@@ -166,6 +166,21 @@ def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_colu
     ax1.set_ylabel('Ground current in uA')
     plt.xlabel('Voltage forced in V')
     plt.autoscale()
+    if "R" in out.columns and "cumulative_energy" in out.columns:
+        e_r_fig,erax1 = plt.subplots()
+        erax2= erax1.twinx()
+        if t=='line':
+            erax1.plot(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
+            erax1.plot(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
+            erax2.plot(x[:half],out['R'][:half]/1000,color='g',marker='x')
+            erax2.plot(x[half:],out['R'][half:]/1000,color='g',marker='x')
+        elif t=='scatter':
+            erax1.scatter(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
+            erax1.scatter(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
+            erax2.scatter(x[:half],out['R'][:half]/1000,color='g',marker='x')
+            erax2.scatter(x[half:],out['R'][half:]/1000,color='g',marker='x')
+        erax1.set_ylabel("Total Energy consumed in mW")
+        erax2.set_ylabel("Resistance in kOhm")
 
 
 # test functions
@@ -354,6 +369,13 @@ reset_pulse_energy_estimate(-1.5,1,0.2)
 
 
 # base abstract procedures
+def add_resistance(d):
+    out = d
+    out["R"]=d["EV"]/d["EI"]
+    return out
+
+
+
 def add_energy(datum):
     datum['cumulative_energy']=(datum['ET'].diff().fillna(0)*datum['EI']*datum['EV']).cumsum()
     return datum
@@ -368,11 +390,13 @@ def sweep(stop, steps, compliance=300e-6,start=0,mrange=MeasureRanges_I.full_aut
     ret,out =b15.run_test(set_setup, force_wait=True, auto_read=True,force_new_setup=True)
     out,series_dict,raw =out
     out=add_energy(out)
+    out=add_resistance(out)
     if plot:
         plot_output(out, up=up,down=down)
     if stats:
         print(out.describe())
     return out
+
 
 def pulse(p_v, width, slope, gate=SMU3, gate_voltage=1.85,ground=SMU2,loadZ=1e6,count=1):
     reset_pulse_setup, reset_pulse,_,_,_= get_pulse(0,p_v,width,
