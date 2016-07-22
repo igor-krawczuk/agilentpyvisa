@@ -332,7 +332,7 @@ def parse_job_results(results, annealing_data=None, form_data=None):
         assert(all([k in form_data for k in form_keys]),"Ensure that form_data has keys {}".format(form_keys))
     if annealing_data:
         child_dic_keys=("RESET_HISTMAX", "SET_HISTMAX", "SET_V")
-        assert(all([isinstance(i,int) for k in annealing_data.keys()]),"Ensure annealing data is a dict with only int as keys")
+        assert(all([isinstance(k,int) for k in annealing_data.keys()]),"Ensure annealing data is a dict with only int as keys")
         assert(all(
             [all(
                 [k in dic for k in child_dic_keys]
@@ -509,3 +509,63 @@ def reset_sweep(reset_v, steps, compliance,mrange=MeasureRanges_I.full_auto, gat
 #assert(set_sweep(0,10,0.1) is not None)
 #assert(reset_sweep(0,10,0.1) is not None)
 
+def anneal(CURRENT_SAMPLE,setV=1.0,resetV=-1.5,gateV=1.9,steps=100,times=3, plot=True,sleep_between=1):
+    """
+    Performs a number of reset/set cycles to anneal the sample and gather some data for characterisation
+    TODO: refactor this, it comes straight from scripting
+    """
+    runs=[]
+    annealing_data={}
+    for i in range(times):
+        anneal={}
+        fig,ax1 = plt.subplots()
+        ax2=ax1.twinx()
+        #plt.suptitle("Reset gate 1.9V, Set gate {}V".format(perc[i]*1.9))
+        plt.hold(True)
+        rgate = gateV
+        rpeak=resetV
+        rsteps=steps
+        print('Reset with Peak {}V, {} steps, gate {}V'.format(rpeak, rsteps, rgate))
+        rt=reset_sweep(rpeak, rsteps,5e-3, mrange=MeasureRanges_I.uA10_limited,gate=rgate,plot=False)
+        rt=add_energy(rt)
+        rt.to_csv("{}_reset_gate{}_-1_5V_{}.csv".format(
+                datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),rgate, CURRENT_SAMPLE)
+                 )
+        plot_output(rt,fig=fig,ax1=ax1,ax2=ax2)
+        rh=get_hist(rt)
+        anneal['RESET_HISTMAX']=rh['R'].abs().max()
+        print('Histmax {}'.format(anneal['RESET_HISTMAX']))
+        print('HRS',checkR(CURRENT_SAMPLE))
+        time.sleep(sleep_between)
+        speak= setV
+        ssteps= steps
+        sgate= gateV
+        print('Set with Peak {}V, {} steps, gate {}V'.format(speak, ssteps, sgate))
+        s=set_sweep(speak,ssteps,10e-3, mrange=MeasureRanges_I.uA10_limited,gate=SMU3,plot=False)
+        s=add_energy(s)
+        s.to_csv("{}_set_gate{}_1V_{}.csv".format(
+                datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),sgate, CURRENT_SAMPLE)
+                )
+        plot_output(s,fig=fig,ax1=ax1,ax2=ax2)
+        sh=get_hist(s)
+        anneal['SET_HISTMAX']=sh['R'].abs().max()
+        print('Histmax {}'.format(anneal['SET_HISTMAX']))
+        anneal['SET_V']=find_set_V(s)
+        print("Set V",anneal['SET_V'])
+        print('LRS',checkR(CURRENT_SAMPLE))
+        time.sleep(sleep_between)
+        #plt.yscale("log")
+        runs.append((rt,s,rgate,sgate))
+        annealing_data[i]=anneal
+
+    frames=[]
+    for rt,s,rgate,sgate in runs:
+        rt['gateV']=[rgate]*len(rt.index)
+        rt['type']='reset'
+        s['gateV']=[sgate]*len(s.index)
+        s['type']='set'
+        frames.append(rt)
+        frames.append(s)
+    frames = pd.concat(frames)
+    frames.to_csv('{}_annealing_{}.csv'.format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), CURRENT_SAMPLE))
+    return frames,annealing_data
