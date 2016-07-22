@@ -385,7 +385,7 @@ def get_hyst(d):
     """
     if not "R" in d.columns:
         d["R"]=d["EV"]/d["EI"]
-    half=d["EV"].abs().idxmax()
+    half=len(d)//2
     # get first half of EV; make sure we indice from 0 to half
     d1=d[:half]
     d1.index=range(half)
