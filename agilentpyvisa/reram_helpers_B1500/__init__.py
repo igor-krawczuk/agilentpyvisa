@@ -344,7 +344,7 @@ def parse_job_results(results, annealing_data=None, form_data=None):
 
     if annealing_data:
         for k in annealing_data.keys():
-            for k2,v in annealing_data.items():
+            for k2,v in annealing_data[k].items():
                 proto["{}_{}".format(k,k2)]=v
     if form_data:
         for k,v in form_data.items():
