@@ -150,6 +150,7 @@ def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_colu
     y=lout[current_column].abs()*1e6 # scale up current from microns
     x=np.array(lout[voltage_column]) 
     half = lout[voltage_column].abs().idxmax() # find peak of sweep for up/down plot
+    ax1.set_xlabel("Voltage in V")
     if t=='line':
         ax1.plot(x[:half],y[:half], color=up,marker='o')
         ax1.plot(x[half:],y[half:], color=down,marker='o')
@@ -171,6 +172,7 @@ def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_colu
     if "R" in out.columns and "cumulative_energy" in out.columns:
         e_r_fig,erax1 = plt.subplots()
         erax2= erax1.twinx()
+        erax1.set_xlabel("Voltage in V")
         if t=='line':
             erax1.plot(x[:half],out['cumulative_energy'][:half]*1000,color='g',marker='x')
             erax1.plot(x[half:],out['cumulative_energy'][half:]*1000,color='g',marker='x')
