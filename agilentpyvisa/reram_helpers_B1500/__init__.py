@@ -397,7 +397,7 @@ def get_hyst(d):
     d2.index=range(half)
     hist = d2-d1
     # dataframe now contains positive R where the second pass had a larger resistance than the first
-    return hist[["EV","R"]]
+    return pd.concat([d1["EV"],hist["R"]],axis=1)
 
 def add_resistance(d):
     out = d
