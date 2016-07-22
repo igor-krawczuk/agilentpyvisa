@@ -337,7 +337,7 @@ def parse_job_results(results, annealing_data=None, form_data=None):
             [all(
                 [k in dic for k in child_dic_keys]
                 ) for dic in annealing_data.values()])
-            ,"Ensure all child-dicts of annealing data have the following keys {}":format(child_dic_keys))
+            ,"Ensure all child-dicts of annealing data have the following keys {}".format(child_dic_keys))
 
     res=[]
     proto = {'Resistance':None,'Voltage':None,'gateVoltage':None,'Type':None,'width':None,'slope':None}
