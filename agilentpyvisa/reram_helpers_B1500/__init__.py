@@ -242,6 +242,30 @@ def consume_patterns(CURRENT_SAMPLE,job_patterns,time_est_every=100,print_check=
             pass
     return resp
 
+def get_repeat_pattern(times,pulseVoltages=(-3.2,2.4), gateVoltages=(1.9,1.9),
+                        widths=(1000e-6,1000e-6),
+                        checkR_every=1,
+                       slopes=(0.2,0.2)
+                       ):
+    patterns=[]
+    i=0
+    for i in range(times):
+        #reset pattern
+        patterns.append(pattern_pulse(voltage=pulseVoltages[0],
+                                      width=widths[0],
+                                      slope=slopes[0],
+                                      gate=SMU3,
+                                     gateVoltage=gateVoltages[0])
+                       )
+        # set pattern
+        patterns.append(pattern_pulse(voltage=pulseVoltages[1],
+                                      width=widths[1],
+                                      slope=slopes[1],
+                                      gate=SMU3,
+                                     gateVoltage=gateVoltages[1])
+                       )
+    return insert_read_every(patterns,checkR_every)
+
 def get_pyramid_pattern(baseVoltages=(-3.2,2.4), baseGateVoltages=(1.9,1.9),
                          voltagePercentages=[(1,1)],
                         gatePercentages=[(1,1)],widths=[(1000e-6,1000e-6)], checkR_every=1,
@@ -274,6 +298,7 @@ def get_pyramid_pattern(baseVoltages=(-3.2,2.4), baseGateVoltages=(1.9,1.9),
         rev.append(patterns[i-1])
         i-=2
     return insert_read_every(patterns+rev,checkR_every)
+
 def insert_read_every(pattern,every=1):
     new_pattern=[]
     i=0
