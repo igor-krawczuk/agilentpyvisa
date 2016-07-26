@@ -329,18 +329,22 @@ def parse_job_results(results, annealing_data=None, form_data=None):
     """
     if form_data:
         form_keys=["FORM_V", "FORM_GATE"]
-        assert all([k in form_data for k in form_keys]),"Ensure that form_data has keys {}".format(form_keys)
+        assert(all([k in form_data for k in form_keys]),"Ensure that form_data has keys {}".format(form_keys))
     if annealing_data:
         child_dic_keys=("RESET_HISTMAX", "SET_HISTMAX", "SET_V")
-        assert all([isinstance(k,int) for k in annealing_data.keys()]),"Ensure annealing data is a dict with only int as keys"
-        assert all([all([k in dic for k in child_dic_keys]) for dic in annealing_data.values()]),"Ensure all child-dicts of annealing data have the following keys {}".format(child_dic_keys)
+        assert(all([isinstance(k,int) for k in annealing_data.keys()]),"Ensure annealing data is a dict with only int as keys")
+        assert(all(
+            [all(
+                [k in dic for k in child_dic_keys]
+                ) for dic in annealing_data.values()])
+            ,"Ensure all child-dicts of annealing data have the following keys {}".format(child_dic_keys))
 
     res=[]
     proto = {'Resistance':None,'Voltage':None,'gateVoltage':None,'Type':None,'width':None,'slope':None}
 
     if annealing_data:
         for k in annealing_data.keys():
-            for k2,v in annealing_data[k].items():
+            for k2,v in annealing_data.items():
                 proto["{}_{}".format(k,k2)]=v
     if form_data:
         for k,v in form_data.items():
