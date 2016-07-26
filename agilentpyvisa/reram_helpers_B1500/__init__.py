@@ -304,11 +304,13 @@ def get_pyramid_pattern(baseVoltages=(-3.2,2.4), baseGateVoltages=(1.9,1.9),
         i-=2
     return insert_read_every(patterns+rev,checkR_every)
 
-def insert_read_every(pattern,every=1):
+def insert_read_every(pattern,N=1):
+    """
+    """
     new_pattern=[]
     i=0
     while i<len(pattern):
-        if (i%every)==0 or (i%every)==1:
+        if (i%N)==0 or (i%N)==1:
             new_pattern.append(pattern_checkR())
         new_pattern.append(pattern[i])
         i+=1
@@ -397,9 +399,9 @@ def parse_job_results(results,CURRENT_SAMPLE, annealing_data=None, form_data=Non
             else:
                 p['Type']='Reset'
         res.append(p)
-    results = pd.DataFrame(res)
-    results.to_csv("{}_pattern_run_{}.csv".format(mytimestamp(), CURRENT_SAMPLE))
-    return results
+    resulttable = pd.DataFrame(res)
+    resulttable.to_csv("{}_pattern_run_{}.csv".format(mytimestamp(), CURRENT_SAMPLE))
+    return resulttable
 def plot_pattern_results(rdf,figsize=[10,10],fill=False):
     fig, ax1 = plt.subplots(figsize=figsize)
     ax2=ax1.twinx()
