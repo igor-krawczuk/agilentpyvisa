@@ -73,6 +73,11 @@ else:
 SPGU_SELECTOR='SMU'
 
 
+def mytimestamp():
+    """
+    Simply returns the current time in a simplified isoformat string
+    """
+    return datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 # define setup functions with sane defaults for Memristor testing.
 
 def get_pulse(base, peak, width,count=1, lead_part=0.8, trail_part=0.8, loadZ=1e6,gate_voltage=1.85,
@@ -344,7 +349,7 @@ def get_series(numpulses,peak,width=1000e-6,slope=0.2,gateV=1.9,count=1):
     return [pattern_pulse(voltage=peak,width=width,slope=slope,gateVoltage=gateV,gate=SMU3,count=count) for _ in range(numpulses)]
 get_series(5,-1.5)
 
-def parse_job_results(results, annealing_data=None, form_data=None):
+def parse_job_results(results,CURRENT_SAMPLE, annealing_data=None, form_data=None):
     """
     Parses the job results and the previous annealing and forming data into a single dataframe to be used for feature building.
     form_data and annealing data are expected to be of a certain shape.
@@ -388,7 +393,9 @@ def parse_job_results(results, annealing_data=None, form_data=None):
             else:
                 p['Type']='Reset'
         res.append(p)
-    return pd.DataFrame(res)
+    results = pd.DataFrame(res)
+    results.to_csv("{}_pattern_run_{}.csv".format(mytimestamp(), CURRENT_SAMPLE))
+    return results
 def plot_pattern_results(rdf,figsize=[10,10],fill=False):
     fig, ax1 = plt.subplots(figsize=figsize)
     ax2=ax1.twinx()
@@ -493,7 +500,7 @@ def read(CURRENT_SAMPLE,start=200e-6,stop=250e-6, steps=51,mrange=MeasureRanges_
     A quick sweep to estimate the current Resistance of the DUT
     """
     out = sweep(start=start,stop=stop,steps=steps,mrange=mrange,gate=gate,plot=plot,stats=stats)
-    out.to_csv("{}_read_{}.csv".format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), CURRENT_SAMPLE))
+    out.to_csv("{}_read_{}.csv".format(mytimestamp(), CURRENT_SAMPLE))
     return out
 
 def checkR(CURRENT_SAMPLE, start=200e-6,stop=350e-6, steps=51,mrange=MeasureRanges_I.uA100_limited,  gate=1.85):
@@ -550,7 +557,7 @@ def anneal(CURRENT_SAMPLE,setV=1.0,resetV=-1.5,gateV=1.9,steps=100,times=3, plot
         rt=reset_sweep(rpeak, rsteps,5e-3, mrange=MeasureRanges_I.uA10_limited,gate=rgate,plot=False)
         rt=add_energy(rt)
         rt.to_csv("{}_reset_gate{}_-1_5V_{}.csv".format(
-                datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),rgate, CURRENT_SAMPLE)
+                mytimestamp(),rgate, CURRENT_SAMPLE)
                  )
         plot_output(rt,fig=fig,ax1=ax1,ax2=ax2)
         rh=get_hist(rt)
@@ -565,7 +572,7 @@ def anneal(CURRENT_SAMPLE,setV=1.0,resetV=-1.5,gateV=1.9,steps=100,times=3, plot
         s=set_sweep(speak,ssteps,10e-3, mrange=MeasureRanges_I.uA10_limited,gate=SMU3,plot=False)
         s=add_energy(s)
         s.to_csv("{}_set_gate{}_1V_{}.csv".format(
-                datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),sgate, CURRENT_SAMPLE)
+                mytimestamp(),sgate, CURRENT_SAMPLE)
                 )
         plot_output(s,fig=fig,ax1=ax1,ax2=ax2)
         sh=get_hist(s)
@@ -588,5 +595,5 @@ def anneal(CURRENT_SAMPLE,setV=1.0,resetV=-1.5,gateV=1.9,steps=100,times=3, plot
         frames.append(rt)
         frames.append(s)
     frames = pd.concat(frames)
-    frames.to_csv('{}_annealing_{}.csv'.format(datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), CURRENT_SAMPLE))
+    frames.to_csv('{}_annealing_{}.csv'.format(mytimestamp(), CURRENT_SAMPLE))
     return frames,annealing_data
