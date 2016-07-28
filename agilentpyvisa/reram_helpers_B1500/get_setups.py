@@ -4,7 +4,7 @@ from ..B1500.measurement import *
 from ..B1500.force import *
 # define setup functions with sane defaults for Memristor testing.
 def get_pulse(base, peak, width,count=1, lead_part=0.8, trail_part=0.8, loadZ=1e6,gate_voltage=1.85,
-              ground=3,channel=101,gate=4):
+              ground=3,channel=101,gate=4,b15=None):
     """
     Defines a SPGU setup based on the given parameters
     The setup assumes we use a transistor with
@@ -22,7 +22,7 @@ def get_pulse(base, peak, width,count=1, lead_part=0.8, trail_part=0.8, loadZ=1e
     return (spgu_test,mspgu, inp_channel, ground_channel, gate_channel)
 
 def get_Vsweep(start, stop, steps, compliance=300e-6,
-               measure_range=MeasureRanges_I.full_auto,gate_voltage=1.85, ground=3):
+               measure_range=MeasureRanges_I.full_auto,gate_voltage=1.85, ground=3,b15=None):
     """
     Defines a Sweep setup based on the given parameters
     The setup assumes we use a transistor with
