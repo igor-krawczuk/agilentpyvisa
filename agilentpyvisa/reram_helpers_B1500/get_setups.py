@@ -1,6 +1,6 @@
 # define setup functions with sane defaults for Memristor testing.
 def get_pulse(base, peak, width,count=1, lead_part=0.8, trail_part=0.8, loadZ=1e6,gate_voltage=1.85,
-              ground=SMU2,channel=101,gate=SMU3):
+              ground=3,channel=101,gate=4):
     """
     Defines a SPGU setup based on the given parameters
     The setup assumes we use a transistor with
@@ -18,7 +18,7 @@ def get_pulse(base, peak, width,count=1, lead_part=0.8, trail_part=0.8, loadZ=1e
     return (spgu_test,mspgu, inp_channel, ground_channel, gate_channel)
 
 def get_Vsweep(start, stop, steps, compliance=300e-6,
-               measure_range=MeasureRanges_I.full_auto,gate_voltage=1.85, ground=SMU2):
+               measure_range=MeasureRanges_I.full_auto,gate_voltage=1.85, ground=3):
     """
     Defines a Sweep setup based on the given parameters
     The setup assumes we use a transistor with
@@ -39,7 +39,7 @@ def get_Vsweep(start, stop, steps, compliance=300e-6,
                            dcforce=DCForce(Inputs.V,0,compliance),
                           )
     
-    gate_channel = Channel(number=SMU3,dcforce=DCForce(Inputs.V,gate_voltage,.1),
+    gate_channel = Channel(number=4,dcforce=DCForce(Inputs.V,gate_voltage,.1),
                           )
     
     sweep_test=TestSetup(channels=[gate_channel,ground_channel,inp_channel],
