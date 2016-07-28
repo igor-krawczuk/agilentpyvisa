@@ -37,7 +37,7 @@ def get_Vsweep(start, stop, steps, compliance=300e-6,
     
     sweep = StaircaseSweep(Inputs.V,InputRanges_V.full_auto,start,stop,steps,compliance, auto_abort=AutoAbort.disabled)
     
-    inp_channel=Channel(number=SMU4,staircase_sweep=sweep, measurement=sweep_measure)
+    inp_channel=Channel(number=5,staircase_sweep=sweep, measurement=sweep_measure)
     
     ground_channel=Channel(number=ground,
                            dcforce=DCForce(Inputs.V,0,compliance),
