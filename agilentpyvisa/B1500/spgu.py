@@ -91,15 +91,21 @@ class SPGUSMU(object):
         semiconductor switch) and sets the state, delay and "normal" state of the switch
         (normally open/closed). the manual states it is "more durable than mechanical relays and
         better suited for frequent switching applications", so if you want to use high
-        frequency patterns, enable this. By default enabled"""
-        return self.parent.write(
+        frequency patterns, enable this. By default disabled. If enabled gives timing issues with 
+        pulses <5us and rise and fall times."""
+       	return (self.parent.write(
             format_command(
                 "ODSW",
                 channel,
                 switch_state,
                 switch_normal,
-                switch_delay,
-                width))
+                switch_delay)) if (switch_state==SPGUSwitch.enabled) 
+                else
+                self.parent.write(
+            format_command(
+                "ODSW",
+                channel,
+                switch_state)))
 
     def set_output_mode(self, output_mode, condition):
         """ Selects between different completion conditions:

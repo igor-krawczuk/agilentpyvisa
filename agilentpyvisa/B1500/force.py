@@ -86,8 +86,8 @@ class SPGU(namedtuple("__SPGU",[
                 wavemode=SPGUModes.Pulse,  # Pulses or Arbitrary Linear Wavve
                 output_mode=SPGUOutputModes.count, ## Free run, number of pulses or duration
                 condition=1,  ## Number of seconds to run or pulses to send
-                loadZ=0.5,  # smallest impedance which reliably lets test succeed
-                switch_state=SPGUSwitch.enabled,
+                loadZ=[1e6],  # estimated impedance load of the DUT. Used internally by the SPGU to modify the supplied voltage (voltage divider with 50 Ohm)
+                switch_state=SPGUSwitch.disabled,
                 switch_normal=SPGUSwitchNormal.open, # switch normally open or closed
                 switch_delay=0,# time to delay pulse opening, independent of pulse_delay
                 switch_width=None,  # time to keep switch state, independent of pulse width
