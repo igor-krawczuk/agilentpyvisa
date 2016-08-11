@@ -1,3 +1,7 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 def plot_output(out, t='line',up='b',down='r', voltage_column='EV', current_column='EI',fig=None,ax1=None,ax2=None):
     """ Show bat plot of voltage sweep, with different colours for up and down sweep"""
     if not (fig and ax1 and ax2):
