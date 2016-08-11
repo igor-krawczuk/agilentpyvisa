@@ -60,13 +60,13 @@ else:
 
 if not "SMU3" in globals():
     SMU3=4 # D
-    print("Setting SMU3 to {}".format(SMU2))
+    print("Setting SMU3 to {}".format(SMU3))
 else:
     print("SMU3 found as value {}".format())
 
 if not "SMU4" in globals():
     SMU4=5 # E
-    print("Setting SMU4 to {}".format(SMU2))
+    print("Setting SMU4 to {}".format(SMU4))
 else:
     print("SMU4 found as value {}".format())
 

@@ -1,11 +1,11 @@
 def sweep(stop, steps, compliance=300e-6,start=0,mrange=MeasureRanges_I.full_auto,
-          gate=1.85, plot=True, up='b',down='r', ground=SMU2, stats=True):
+          gate=1.85, plot=True, up='b',down='r', ground=SMU2, stats=True,gate_number=4):
     """ Create and immediately perform a sweep, optionally plot the data and/or show statistics"""
     b15.set_SMUSPGU_selector(SMU_SPGU_port.Module_1_Output_1,SMU_SPGU_state.connect_relay_SMU)
     global SPGU_SELECTOR
     SPGU_SELECTOR='SMU'
     set_setup,set, _ ,ground_channel,gate_channel=get_Vsweep(start=start,stop=stop,steps=steps, compliance=compliance,
-                                                                     measure_range=mrange,gate_voltage=gate, ground=ground)
+                                                                     measure_range=mrange,gate_voltage=gate, ground=ground,gate=gate_number)
     ret,out =b15.run_test(set_setup, force_wait=True, auto_read=True,force_new_setup=True)
     out,series_dict,raw =out
     out=add_energy(out)
@@ -66,7 +66,7 @@ def reset_sweep(reset_v, steps, compliance,mrange=MeasureRanges_I.full_auto, gat
     DC reset, with SMU1 as ground -> no transistor limiting
     """
     return sweep(reset_v, steps, compliance,mrange=mrange, gate=gate, plot=plot, ground=SMU1)
-t
+
 def anneal(CURRENT_SAMPLE,setV=1.0,resetV=-1.5,gateV=1.9,steps=100,times=3, plot=True,sleep_between=1):
     """
     Performs a number of reset/set cycles to anneal the sample and gather some data for characterisation
