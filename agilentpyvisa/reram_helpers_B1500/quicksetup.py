@@ -114,13 +114,13 @@ def get_Vsweep(start, stop, steps, compliance=300e-6,
     
     sweep = StaircaseSweep(Inputs.V,InputRanges_V.full_auto,start,stop,steps,compliance, auto_abort=AutoAbort.disabled)
     
-    inp_channel=Channel(number=SMU4,staircase_sweep=sweep, measurement=sweep_measure)
+    inp_channel=Channel(number=5,staircase_sweep=sweep, measurement=sweep_measure)
     
     ground_channel=Channel(number=ground,
                            dcforce=DCForce(Inputs.V,0,compliance),
                           )
     
-    gate_channel = Channel(number=SMU3,dcforce=DCForce(Inputs.V,gate_voltage,.1),
+    gate_channel = Channel(number=4,dcforce=DCForce(Inputs.V,gate_voltage,.1),
                           )
     
     sweep_test=TestSetup(channels=[gate_channel,ground_channel,inp_channel],
@@ -464,6 +464,7 @@ def add_resistance(d):
 def add_energy(datum):
     datum['cumulative_energy']=(datum['ET'].diff().fillna(0)*datum['EI']*datum['EV']).cumsum()
     return datum
+
 def sweep(stop, steps, compliance=300e-6,start=0,mrange=MeasureRanges_I.full_auto,
           gate=1.85, plot=True, up='b',down='r', ground=SMU2, stats=True):
     """ Create and immediately perform a sweep, optionally plot the data and/or show statistics"""
