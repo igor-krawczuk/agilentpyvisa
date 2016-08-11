@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 # some very basic analysis functions
 def get_R(d, current_column='EI', voltage_column='EV'):
     """
@@ -12,6 +14,9 @@ def reset_pulse_energy_estimate(peak,width,slope,lrs_res=2e3,hrs_res=15e3):
     lrs_energy=(0.5*slope+(0.5-slope))*width*peak*peak/lrs_res
     hrs_energy=(0.5*slope+(0.5-slope))*width*peak*peak/hrs_res
     return lrs_energy+hrs_energy
+
+def get_maxCurrent(d, current_column='EI', voltage_column='EV'):
+    return d[current_column].abs().max()
 
 
 # base abstract procedures
@@ -42,6 +47,10 @@ def get_hist(d):
     hist = d2-d1
     # dataframe now contains positive R where the second pass had a larger resistance than the first
     return pd.concat([d1["EV"],hist["R"]],axis=1)
+
+def getMaxHist(d):
+    eh = get_hist(d)
+    return eh["R"].abs().max()
 
 def add_resistance(d):
     out = d
