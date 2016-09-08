@@ -1,11 +1,14 @@
+﻿# WARNING: might contain bugs and while is very much intended to help you write code that generates nice configuration structs, a lot of refactoring still has to be done, so the API will break. Once I have finished my Masters Thesis I will do that major refactor, so you code WILL break.
+
+If you are fine with that, feel free to read on and try the library:)
+
 # agilentpyvisa
 A WIP library to control B1500 and similar testers via the VISA protocol, built on pyvisa
 
 First tests are working, but a lot is till to be done.
 
-
 # Introduction
-As I need it for my research internship, I will develop a python based library to make writing complex tests as convenient as possible.
+As I needed it for my research internship, I developed a python based library to make writing complex tests as convenient as possible.
  I am putting it on Github so others can use it if it helps them as well, critique it and maybe give me some advice on how to do things
  
 It is very much a work in progress and not stable at all. It is also missing a lot of functions and was not tested yet.
@@ -15,11 +18,13 @@ It is very much a work in progress and not stable at all. It is also missing a l
 When I write one off scripts, I like the code to be self documenting. It also should scream at me if I do something wrong. This tries to do that.
 The bulk of the work so far has been creating classes,Enums and namedtuples to make sure there are no magic numbers or cryptic commands, at the expense of more typing. But that is what ipython tabcompletion is for.
 
-I went through a lot of trial and error with the documentation, as it is not quite what I would call intuitive. 
+I went through a lot of trial and error with the documentation, as it is not quite what I would call an intuitive API. 
 My lack of understanding of the system also shows in the commit history (as well as the fact that I use this repo to get it on the testing machine).
  But hey, now you don't have to go through all that pain! Just use the library :-)
 
-I will continue working on this library as I go, ideally making it feature complete.
+I will continue working on this library as I go, ideally making it feature complete. If anyone from agilent reads this and wants to scream at me because I was to dumb to RTFM, feel free, I'd like to learn. 
+
+If anybody wants to pay me to do a proper job quikcer, feel free to send me an offer:)
 # Status
 ## What works right now
 
@@ -32,7 +37,7 @@ I will continue working on this library as I go, ideally making it feature compl
 
 *  PulsedSweep, PulsedSpot, BinarySearch, LinearSearch
 * Most of these have validations on creation of the configuration tuples which tell you what to do, give you the alllowable ranges should you exceed them etc
-* Verbose namedtuples and IntEnums for self documenting code, but with the option to still handcode your tests (i.e., use "DV 0,{},{}".format(InputRange.full_auto, 5" to force 5 Volt with automatic input ranging, or write tester.set_highspeed_adc(0,0) == "AV 0,0" if you know which int means what)
+* Verbose namedtuples and IntEnums for self documenting code, but with the option to still hand code your tests (i.e., use "DV 0,{},{}".format(InputRange.full_auto, 5" to force 5 Volt with automatic input ranging, or write tester.set_highspeed_adc(0,0) == "AV 0,0" if you know which int means what)
 * Recording setups as programs to speed up testing, keeping track of them in the tester object
 
 
@@ -48,7 +53,7 @@ I will continue working on this library as I go, ideally making it feature compl
 
 # Documentation and examples
 In general, use the Tab completion a lot and peek in the source code. I have programmed VERY verbosely.
-The API is not greatl composable, but I was not smart enough to do that in the limited time and given that I still basically wrap strings that get sent to the tester.
+The API is not greatly composable, but I was not smart enough to do that in the limited time and given that I still basically wrap strings that get sent to the tester.
 
 ## Setup
 Initialize a tester object by giving it the VISA address. It will initialize, reset the device and explore a bit to figure out what SMUs are connected. Afterwards you can see the available channels in the .sub_channels tuple of your tester instance
