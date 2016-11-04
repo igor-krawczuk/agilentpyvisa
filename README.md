@@ -1,4 +1,4 @@
-﻿# WARNING: might contain bugs and while is very much intended to help you write code that generates nice configuration structs, a lot of refactoring still has to be done, so the API will break. Once I have finished my Masters Thesis I will do that major refactor, so you code WILL break.
+﻿# WARNING: might contain bugs and while is very much intended to help you write code that generates nice configuration structs, a lot of refactoring still has to be done, so the API will break. Once I have finished my Masters Thesis I will do that major refactor, so your code WILL break.
 
 If you are fine with that, feel free to read on and try the library:)
 
